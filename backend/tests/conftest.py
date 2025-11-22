@@ -48,3 +48,21 @@ def client(engine) -> Iterator[TestClient]:
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
+
+
+def register(client: TestClient, email: str = "reader@example.com") -> dict[str, str]:
+    response = client.post(
+        "/api/auth/register", json={"email": email, "password": "correct-horse-battery"}
+    )
+    assert response.status_code == 201, response.text
+    return {"Authorization": f"Bearer {response.json()['access_token']}"}
+
+
+@pytest.fixture
+def auth(client: TestClient) -> dict[str, str]:
+    return register(client)
+
+
+@pytest.fixture
+def other_auth(client: TestClient) -> dict[str, str]:
+    return register(client, "someone-else@example.com")
