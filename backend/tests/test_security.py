@@ -38,3 +38,12 @@ def test_expired_token_is_rejected():
         {"sub": "1", "exp": 1_000_000_000}, settings.jwt_secret, algorithm=settings.jwt_algorithm
     )
     assert decode_access_token(expired) is None
+
+
+def test_tokens_without_a_usable_subject_or_signature_are_rejected():
+    settings = get_settings()
+    for payload in [{"sub": "not-a-number"}, {"user": "42"}]:
+        token = jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+        assert decode_access_token(token) is None
+    unsigned = jwt.encode({"sub": "42"}, key=None, algorithm="none")
+    assert decode_access_token(unsigned) is None
