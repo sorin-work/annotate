@@ -66,3 +66,20 @@ def auth(client: TestClient) -> dict[str, str]:
 @pytest.fixture
 def other_auth(client: TestClient) -> dict[str, str]:
     return register(client, "someone-else@example.com")
+
+
+SAMPLE_TEXT = (
+    "The quick brown fox jumps over the lazy dog.\n\n"
+    "A second paragraph talks about reading slowly and taking notes.\n"
+)
+
+
+@pytest.fixture
+def document(client: TestClient, auth: dict[str, str]) -> dict:
+    response = client.post(
+        "/api/documents",
+        json={"title": "Sample", "content": SAMPLE_TEXT, "author": "A. Writer"},
+        headers=auth,
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
