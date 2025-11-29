@@ -1,3 +1,5 @@
+from pathlib import PurePath
+
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
@@ -5,7 +7,9 @@ from app.errors import AppError, NotFoundError
 from app.models import Document, User
 from app.schemas.documents import DocumentCreate, DocumentDetail, DocumentSummary, DocumentUpdate
 from app.services import text as textutil
+from app.services.pdf import extract_pdf
 
+TEXT_EXTENSIONS = {".txt": "text", ".text": "text", ".md": "markdown", ".markdown": "markdown"}
 SORTS = {
     "recent": (Document.created_at.desc(),),
     "created": (Document.created_at.desc(),),
@@ -23,6 +27,45 @@ def create_document(db: Session, user: User, data: DocumentCreate) -> Document:
         word_count=textutil.count_words(content),
         author=data.author or None,
         source_url=data.source_url or None,
+    )
+    db.add(document)
+    db.commit()
+    return document
+
+
+def create_from_upload(
+    db: Session, user: User, filename: str, data: bytes, title: str | None = None
+) -> Document:
+    path = PurePath(filename or "upload.txt")
+    extension = path.suffix.lower()
+    detected_title: str | None = None
+
+    if extension == ".pdf":
+        source_type = "pdf"
+        content, detected_title = extract_pdf(data)
+    elif extension in TEXT_EXTENSIONS:
+        source_type = TEXT_EXTENSIONS[extension]
+        try:
+            content = data.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise AppError("Text files must be UTF-8 encoded", code="invalid_file") from exc
+        if source_type == "markdown":
+            detected_title = textutil.markdown_title(content)
+    else:
+        raise AppError(
+            "Unsupported file type. Upload a .txt, .md or .pdf file", code="unsupported_file"
+        )
+
+    if not content.strip():
+        raise AppError("The file is empty", code="invalid_file")
+
+    document = Document(
+        owner_id=user.id,
+        title=(title or "").strip() or detected_title or path.stem.replace("_", " ")[:300],
+        source_type=source_type,
+        content=content,
+        word_count=textutil.count_words(content),
+        original_filename=path.name[:255],
     )
     db.add(document)
     db.commit()

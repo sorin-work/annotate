@@ -1,8 +1,10 @@
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Query, Response, status
+from fastapi import APIRouter, File, Form, Query, Response, UploadFile, status
 
+from app.config import get_settings
 from app.deps import CurrentUser, DbSession
+from app.errors import AppError
 from app.schemas.common import Page
 from app.schemas.documents import DocumentCreate, DocumentDetail, DocumentSummary, DocumentUpdate
 from app.services import documents as service
@@ -26,6 +28,25 @@ def list_documents(
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_document(data: DocumentCreate, user: CurrentUser, db: DbSession) -> DocumentDetail:
     return service.to_detail(service.create_document(db, user, data))
+
+
+@router.post("/upload", status_code=status.HTTP_201_CREATED)
+async def upload_document(
+    user: CurrentUser,
+    db: DbSession,
+    file: Annotated[UploadFile, File()],
+    title: Annotated[str | None, Form(max_length=300)] = None,
+) -> DocumentDetail:
+    limit = get_settings().max_upload_bytes
+    data = await file.read(limit + 1)
+    if len(data) > limit:
+        raise AppError(
+            f"File is too large (max {get_settings().max_upload_mb} MB)",
+            code="payload_too_large",
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+        )
+    document = service.create_from_upload(db, user, file.filename or "", data, title)
+    return service.to_detail(document)
 
 
 @router.get("/{document_id}")
