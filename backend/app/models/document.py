@@ -1,9 +1,13 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base, utcnow
+
+if TYPE_CHECKING:
+    from app.models.highlight import Highlight
 
 SOURCE_TYPES = ("text", "markdown", "pdf")
 
@@ -22,3 +26,10 @@ class Document(Base):
     source_url: Mapped[str | None] = mapped_column(String(2000))
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(default=utcnow, onupdate=utcnow)
+
+    highlights: Mapped[list["Highlight"]] = relationship(
+        back_populates="document",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="Highlight.start_offset",
+    )
