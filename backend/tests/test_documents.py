@@ -1,4 +1,4 @@
-from tests.conftest import register
+from tests.conftest import SAMPLE_TEXT, register
 from tests.pdf_fixture import make_pdf
 
 
@@ -33,10 +33,17 @@ def test_documents_require_auth(client):
     assert client.get("/api/documents").status_code == 401
 
 
-def test_list_documents_with_excerpt(client, auth, document):
+def test_list_documents_with_counts_and_excerpt(client, auth, document):
+    start = SAMPLE_TEXT.index("quick")
+    client.post(
+        f"/api/documents/{document['id']}/highlights",
+        json={"start_offset": start, "end_offset": start + 5},
+        headers=auth,
+    )
     body = client.get("/api/documents", headers=auth).json()
     assert body["total"] == 1
     item = body["items"][0]
+    assert item["highlight_count"] == 1
     assert item["excerpt"].startswith("The quick brown fox")
     assert "content" not in item
 

@@ -4,7 +4,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.errors import AppError, NotFoundError
-from app.models import Document, User
+from app.models import Document, Highlight, User
 from app.schemas.documents import DocumentCreate, DocumentDetail, DocumentSummary, DocumentUpdate
 from app.services import text as textutil
 from app.services.pdf import extract_pdf
@@ -99,6 +99,17 @@ def delete_document(db: Session, document: Document) -> None:
     db.commit()
 
 
+def highlight_counts(db: Session, document_ids: list[int]) -> dict[int, int]:
+    if not document_ids:
+        return {}
+    rows = db.execute(
+        select(Highlight.document_id, func.count(Highlight.id))
+        .where(Highlight.document_id.in_(document_ids))
+        .group_by(Highlight.document_id)
+    )
+    return {row[0]: row[1] for row in rows}
+
+
 def list_documents(
     db: Session,
     user: User,
@@ -136,7 +147,7 @@ def to_summary(document: Document, highlight_count: int = 0) -> DocumentSummary:
 
 
 def to_detail(document: Document) -> DocumentDetail:
-    summary = to_summary(document)
+    summary = to_summary(document, len(document.highlights))
     return DocumentDetail(
         **summary.model_dump(),
         content=document.content,

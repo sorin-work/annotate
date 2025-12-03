@@ -22,7 +22,8 @@ def list_documents(
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> Page[DocumentSummary]:
     documents, total = service.list_documents(db, user, q=q, sort=sort, limit=limit, offset=offset)
-    return Page(items=[service.to_summary(d) for d in documents], total=total)
+    counts = service.highlight_counts(db, [d.id for d in documents])
+    return Page(items=[service.to_summary(d, counts.get(d.id, 0)) for d in documents], total=total)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)

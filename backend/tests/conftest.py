@@ -83,3 +83,16 @@ def document(client: TestClient, auth: dict[str, str]) -> dict:
     )
     assert response.status_code == 201, response.text
     return response.json()
+
+
+def highlight(
+    client: TestClient, auth: dict[str, str], document: dict, quote: str, **extra
+) -> dict:
+    start = document["content"].index(quote)
+    response = client.post(
+        f"/api/documents/{document['id']}/highlights",
+        json={"start_offset": start, "end_offset": start + len(quote), **extra},
+        headers=auth,
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
