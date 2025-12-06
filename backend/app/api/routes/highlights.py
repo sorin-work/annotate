@@ -1,7 +1,18 @@
-from fastapi import APIRouter, Response, status
+from typing import Annotated
+
+from fastapi import APIRouter, Query, Response, status
+from sqlalchemy import func, select
 
 from app.deps import CurrentUser, DbSession
-from app.schemas.highlights import HighlightCreate, HighlightOut, HighlightUpdate
+from app.models import Highlight
+from app.schemas.common import Page
+from app.schemas.highlights import (
+    Color,
+    HighlightCreate,
+    HighlightOut,
+    HighlightUpdate,
+    HighlightWithDocument,
+)
 from app.services import documents as document_service
 from app.services import highlights as service
 
@@ -22,6 +33,25 @@ def create_highlight(
 ) -> HighlightOut:
     document = document_service.get_document(db, user, document_id)
     return service.to_out(service.create_highlight(db, user, document, data))
+
+
+@router.get("/highlights")
+def list_highlights(
+    user: CurrentUser,
+    db: DbSession,
+    q: str | None = None,
+    tag: str | None = None,
+    color: Color | None = None,
+    document_id: int | None = None,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> Page[HighlightWithDocument]:
+    query = service.filtered_query(user, q=q, tag=tag, color=color, document_id=document_id)
+    total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
+    rows = db.scalars(
+        query.order_by(Highlight.created_at.desc(), Highlight.id.desc()).limit(limit).offset(offset)
+    )
+    return Page(items=[service.to_out_with_document(h) for h in rows], total=total)
 
 
 @router.patch("/highlights/{highlight_id}")

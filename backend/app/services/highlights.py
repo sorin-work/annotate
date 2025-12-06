@@ -1,9 +1,14 @@
-from sqlalchemy import select
+from sqlalchemy import Select, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.errors import AppError, NotFoundError
-from app.models import Document, Highlight, User
-from app.schemas.highlights import HighlightCreate, HighlightOut, HighlightUpdate
+from app.models import Document, Highlight, Tag, User
+from app.schemas.highlights import (
+    HighlightCreate,
+    HighlightOut,
+    HighlightUpdate,
+    HighlightWithDocument,
+)
 from app.services.tags import get_or_create_tags
 
 
@@ -68,6 +73,36 @@ def list_for_document(db: Session, document: Document) -> list[Highlight]:
     )
 
 
+def filtered_query(
+    user: User,
+    *,
+    q: str | None = None,
+    tag: str | None = None,
+    color: str | None = None,
+    document_id: int | None = None,
+) -> Select[tuple[Highlight]]:
+    """Highlights belonging to ``user`` matching all of the given filters."""
+    query = (
+        select(Highlight)
+        .join(Document, Document.id == Highlight.document_id)
+        .where(Highlight.owner_id == user.id)
+        .options(selectinload(Highlight.tags), selectinload(Highlight.document))
+    )
+    if q:
+        pattern = f"%{q.strip()}%"
+        tag_match = Highlight.tags.any(Tag.name.ilike(pattern))
+        query = query.where(
+            or_(Highlight.quote.ilike(pattern), Highlight.note.ilike(pattern), tag_match)
+        )
+    if tag:
+        query = query.where(Highlight.tags.any(Tag.name == tag))
+    if color:
+        query = query.where(Highlight.color == color)
+    if document_id is not None:
+        query = query.where(Highlight.document_id == document_id)
+    return query
+
+
 def to_out(highlight: Highlight) -> HighlightOut:
     return HighlightOut(
         id=highlight.id,
@@ -80,4 +115,10 @@ def to_out(highlight: Highlight) -> HighlightOut:
         tags=[tag.name for tag in highlight.tags],
         created_at=highlight.created_at,
         updated_at=highlight.updated_at,
+    )
+
+
+def to_out_with_document(highlight: Highlight) -> HighlightWithDocument:
+    return HighlightWithDocument(
+        **to_out(highlight).model_dump(), document_title=highlight.document.title
     )

@@ -63,3 +63,7 @@ class HighlightOut(ApiModel):
     tags: list[str]
     created_at: datetime
     updated_at: datetime
+
+
+class HighlightWithDocument(HighlightOut):
+    document_title: str
