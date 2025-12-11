@@ -49,3 +49,17 @@ def test_tags_are_private(client, auth, document):
     other = register(client, "other@example.com")
     assert client.get("/api/tags", headers=other).json() == []
     assert client.delete(f"/api/tags/{tag['id']}", headers=other).status_code == 404
+
+
+def test_rename_tag_normalises_and_rejects_empty_names(client, auth, document):
+    highlight(client, auth, document, "quick brown", tags=["focus"])
+    tag = client.get("/api/tags", headers=auth).json()[0]
+    url = f"/api/tags/{tag['id']}"
+
+    response = client.patch(url, json={"name": "  #Deep   Work "}, headers=auth)
+    assert response.json()["name"] == "deep work"
+
+    for name in ["#", "   "]:
+        response = client.patch(url, json={"name": name}, headers=auth)
+        assert response.status_code == 422, name
+    assert client.get("/api/tags", headers=auth).json()[0]["name"] == "deep work"
