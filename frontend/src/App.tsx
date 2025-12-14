@@ -1,5 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router';
 import { GuestOnly, RequireAuth } from './auth/guards';
+import Layout from './components/Layout';
+import LibraryPage from './pages/LibraryPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 
@@ -23,13 +25,14 @@ export default function App() {
         }
       />
       <Route
-        path="/"
         element={
           <RequireAuth>
-            <p className="content">You are signed in.</p>
+            <Layout />
           </RequireAuth>
         }
-      />
+      >
+        <Route index element={<LibraryPage />} />
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
