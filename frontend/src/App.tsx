@@ -1,8 +1,36 @@
+import { Navigate, Route, Routes } from 'react-router';
+import { GuestOnly, RequireAuth } from './auth/guards';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+
 export default function App() {
   return (
-    <main className="content">
-      <h1>annotate</h1>
-      <p className="muted">Highlight and take notes on what you read.</p>
-    </main>
+    <Routes>
+      <Route
+        path="/login"
+        element={
+          <GuestOnly>
+            <LoginPage />
+          </GuestOnly>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <GuestOnly>
+            <RegisterPage />
+          </GuestOnly>
+        }
+      />
+      <Route
+        path="/"
+        element={
+          <RequireAuth>
+            <p className="content">You are signed in.</p>
+          </RequireAuth>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
