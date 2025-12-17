@@ -3,6 +3,7 @@ import { GuestOnly, RequireAuth } from './auth/guards';
 import Layout from './components/Layout';
 import LibraryPage from './pages/LibraryPage';
 import LoginPage from './pages/LoginPage';
+import NewDocumentPage from './pages/NewDocumentPage';
 import RegisterPage from './pages/RegisterPage';
 
 export default function App() {
@@ -32,6 +33,7 @@ export default function App() {
         }
       >
         <Route index element={<LibraryPage />} />
+        <Route path="documents/new" element={<NewDocumentPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
