@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router';
 import { GuestOnly, RequireAuth } from './auth/guards';
 import Layout from './components/Layout';
+import DocumentPage from './pages/DocumentPage';
 import LibraryPage from './pages/LibraryPage';
 import LoginPage from './pages/LoginPage';
 import NewDocumentPage from './pages/NewDocumentPage';
@@ -34,6 +35,7 @@ export default function App() {
       >
         <Route index element={<LibraryPage />} />
         <Route path="documents/new" element={<NewDocumentPage />} />
+        <Route path="documents/:id" element={<DocumentPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

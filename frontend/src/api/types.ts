@@ -35,3 +35,23 @@ export interface DocumentDetail extends DocumentSummary {
   original_filename: string | null;
   source_url: string | null;
 }
+
+export const COLORS = ['yellow', 'green', 'blue', 'pink', 'purple'] as const;
+export type Color = (typeof COLORS)[number];
+
+export interface Highlight {
+  id: number;
+  document_id: number;
+  start_offset: number;
+  end_offset: number;
+  quote: string;
+  color: Color;
+  note: string | null;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HighlightWithDocument extends Highlight {
+  document_title: string;
+}
