@@ -55,3 +55,9 @@ export interface Highlight {
 export interface HighlightWithDocument extends Highlight {
   document_title: string;
 }
+
+export interface Tag {
+  id: number;
+  name: string;
+  highlight_count: number;
+}
