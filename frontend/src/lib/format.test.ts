@@ -20,4 +20,17 @@ describe('format helpers', () => {
     expect(timeAgo('2026-03-09T12:00:00Z', now)).toBe('yesterday');
     expect(timeAgo('2026-02-01T12:00:00Z', now)).toBe('last month');
   });
+
+  it('handles times in the future and rounds to the nearest unit', () => {
+    const now = new Date('2026-03-10T12:00:00Z');
+    expect(timeAgo('2026-03-10T12:30:00Z', now)).toBe('in 30 minutes');
+    expect(timeAgo('2026-03-12T12:00:00Z', now)).toBe('in 2 days');
+    expect(timeAgo('2026-03-10T10:20:00Z', now)).toBe('2 hours ago');
+    expect(timeAgo('2025-03-01T12:00:00Z', now)).toBe('last year');
+  });
+
+  it('rounds reading time to whole minutes', () => {
+    expect(readingTime(344)).toBe('1 min read');
+    expect(readingTime(346)).toBe('2 min read');
+  });
 });
