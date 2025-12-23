@@ -912,3 +912,72 @@ textarea {
   align-items: center;
   gap: 0.6rem;
 }
+
+/* Highlight cards */
+
+.highlight-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.highlight-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border);
+  border-radius: 6px;
+  padding: 0.9rem 1.1rem;
+}
+
+.highlight-card blockquote {
+  margin: 0;
+  font-family: Georgia, serif;
+  font-size: 1.02rem;
+}
+
+.highlight-card .note {
+  margin: 0.5rem 0 0;
+  color: #3d4148;
+}
+
+.highlight-card footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.export-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.search-section {
+  margin-bottom: 2rem;
+}
+
+.search-documents {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.search-documents li {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+}
+
+.search-documents p {
+  margin: 0.35rem 0 0;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.25rem;
+}

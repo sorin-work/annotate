@@ -1,7 +1,10 @@
 import { NavLink, Outlet } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 
-const NAV = [{ to: '/', label: 'Library', end: true }];
+const NAV = [
+  { to: '/', label: 'Library', end: true },
+  { to: '/highlights', label: 'Highlights' },
+];
 
 export default function Layout() {
   const { user, signOut } = useAuth();
