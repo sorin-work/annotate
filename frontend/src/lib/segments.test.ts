@@ -46,4 +46,26 @@ describe('segmentRange', () => {
   it('returns nothing for an empty range', () => {
     expect(segmentRange(4, 4, [])).toEqual([]);
   });
+
+  it('keeps touching highlights apart', () => {
+    expect(
+      segmentRange(0, 9, [
+        { id: 1, start: 0, end: 3 },
+        { id: 2, start: 3, end: 6 },
+      ]),
+    ).toEqual([
+      { start: 0, end: 3, highlightIds: [1] },
+      { start: 3, end: 6, highlightIds: [2] },
+      { start: 6, end: 9, highlightIds: [] },
+    ]);
+  });
+
+  it('lists every highlight covering a piece, in the order given', () => {
+    expect(
+      segmentRange(0, 4, [
+        { id: 7, start: 0, end: 4 },
+        { id: 3, start: 0, end: 4 },
+      ]),
+    ).toEqual([{ start: 0, end: 4, highlightIds: [7, 3] }]);
+  });
 });
