@@ -7,6 +7,7 @@ import LibraryPage from './pages/LibraryPage';
 import LoginPage from './pages/LoginPage';
 import NewDocumentPage from './pages/NewDocumentPage';
 import RegisterPage from './pages/RegisterPage';
+import TagsPage from './pages/TagsPage';
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="documents/new" element={<NewDocumentPage />} />
         <Route path="documents/:id" element={<DocumentPage />} />
         <Route path="highlights" element={<HighlightsPage />} />
+        <Route path="tags" element={<TagsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
