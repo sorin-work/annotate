@@ -64,9 +64,22 @@ function TagRow({
   );
 }
 
+type TagOrder = 'name' | 'usage';
+
 export default function TagsPage() {
   const queryClient = useQueryClient();
   const { data: tags, isPending, error } = useQuery({ queryKey: ['tags'], queryFn: tagsApi.list });
+  const [order, setOrder] = useState<TagOrder>('name');
+  const [filter, setFilter] = useState('');
+
+  const needle = filter.trim().toLowerCase().replace(/^#/, '');
+  const shown = (tags ?? [])
+    .filter((tag) => tag.name.includes(needle))
+    .sort((a, b) =>
+      order === 'usage'
+        ? b.highlight_count - a.highlight_count || a.name.localeCompare(b.name)
+        : a.name.localeCompare(b.name),
+    );
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['tags'] });
@@ -90,8 +103,30 @@ export default function TagsPage() {
       {tags?.length === 0 && (
         <EmptyState title="No tags yet">Add tags to a highlight from the document page.</EmptyState>
       )}
+      {tags && tags.length > 0 && (
+        <div className="toolbar">
+          <input
+            type="search"
+            placeholder="Find a tag"
+            aria-label="Find a tag"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          />
+          <select
+            aria-label="Order"
+            value={order}
+            onChange={(e) => setOrder(e.target.value as TagOrder)}
+          >
+            <option value="name">A to Z</option>
+            <option value="usage">Most used first</option>
+          </select>
+        </div>
+      )}
+      {tags && tags.length > 0 && shown.length === 0 && (
+        <p className="muted">No tags match “{filter.trim()}”.</p>
+      )}
       <ul className="tag-list panel">
-        {tags?.map((tag) => (
+        {shown.map((tag) => (
           <TagRow
             key={tag.id}
             tag={tag}
