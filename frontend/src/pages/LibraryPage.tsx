@@ -6,6 +6,7 @@ import EmptyState from '../components/EmptyState';
 import ErrorMessage from '../components/ErrorMessage';
 import PageHeader from '../components/PageHeader';
 import { plural, readingTime, timeAgo } from '../lib/format';
+import { parsePage } from '../lib/params';
 
 const PAGE_SIZE = 20;
 
@@ -13,7 +14,7 @@ export default function LibraryPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get('q') ?? '';
   const sort = (params.get('sort') as DocumentSort | null) ?? 'recent';
-  const page = Math.max(1, Number(params.get('page') ?? 1));
+  const page = parsePage(params.get('page'));
 
   const { data, isPending, error } = useQuery({
     queryKey: ['documents', { q, sort, page }],
