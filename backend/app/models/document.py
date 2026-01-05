@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base, utcnow
 
 if TYPE_CHECKING:
+    from app.models.collection import Collection
     from app.models.highlight import Highlight
 
 SOURCE_TYPES = ("text", "markdown", "pdf")
@@ -32,4 +33,7 @@ class Document(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
         order_by="Highlight.start_offset",
+    )
+    collections: Mapped[list["Collection"]] = relationship(
+        secondary="collection_documents", back_populates="documents"
     )
