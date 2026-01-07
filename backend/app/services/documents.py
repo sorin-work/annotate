@@ -4,7 +4,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.errors import AppError, NotFoundError
-from app.models import Document, Highlight, User
+from app.models import Collection, Document, Highlight, User, collection_documents
 from app.schemas.documents import DocumentCreate, DocumentDetail, DocumentSummary, DocumentUpdate
 from app.services import text as textutil
 from app.services.pdf import extract_pdf
@@ -115,6 +115,7 @@ def list_documents(
     user: User,
     *,
     q: str | None = None,
+    collection_id: int | None = None,
     sort: str = "recent",
     limit: int = 50,
     offset: int = 0,
@@ -123,6 +124,13 @@ def list_documents(
     if q:
         pattern = f"%{q.strip()}%"
         query = query.where(or_(Document.title.ilike(pattern), Document.author.ilike(pattern)))
+    if collection_id is not None:
+        collection = db.get(Collection, collection_id)
+        if collection is None or collection.owner_id != user.id:
+            raise NotFoundError("Collection not found")
+        query = query.join(
+            collection_documents, collection_documents.c.document_id == Document.id
+        ).where(collection_documents.c.collection_id == collection_id)
 
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
     order = SORTS.get(sort, SORTS["recent"])
@@ -153,4 +161,5 @@ def to_detail(document: Document) -> DocumentDetail:
         content=document.content,
         original_filename=document.original_filename,
         source_url=document.source_url,
+        collections=[{"id": c.id, "name": c.name} for c in document.collections],
     )

@@ -2,7 +2,7 @@ from sqlalchemy import Select, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.errors import AppError, NotFoundError
-from app.models import Document, Highlight, Tag, User
+from app.models import Document, Highlight, Tag, User, collection_documents
 from app.schemas.highlights import (
     HighlightCreate,
     HighlightOut,
@@ -80,6 +80,7 @@ def filtered_query(
     tag: str | None = None,
     color: str | None = None,
     document_id: int | None = None,
+    collection_id: int | None = None,
 ) -> Select[tuple[Highlight]]:
     """Highlights belonging to ``user`` matching all of the given filters."""
     query = (
@@ -100,6 +101,14 @@ def filtered_query(
         query = query.where(Highlight.color == color)
     if document_id is not None:
         query = query.where(Highlight.document_id == document_id)
+    if collection_id is not None:
+        query = query.where(
+            Highlight.document_id.in_(
+                select(collection_documents.c.document_id).where(
+                    collection_documents.c.collection_id == collection_id
+                )
+            )
+        )
     return query
 
 

@@ -30,6 +30,11 @@ class DocumentUpdate(ApiModel):
     source_url: str | None = Field(default=None, max_length=2000)
 
 
+class CollectionRef(ApiModel):
+    id: int
+    name: str
+
+
 class DocumentSummary(ApiModel):
     id: int
     title: str
@@ -46,3 +51,4 @@ class DocumentDetail(DocumentSummary):
     content: str
     original_filename: str | None
     source_url: str | None
+    collections: list[CollectionRef] = []

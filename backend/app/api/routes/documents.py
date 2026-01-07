@@ -17,11 +17,14 @@ def list_documents(
     user: CurrentUser,
     db: DbSession,
     q: str | None = None,
+    collection_id: int | None = None,
     sort: Literal["recent", "created", "title"] = "recent",
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> Page[DocumentSummary]:
-    documents, total = service.list_documents(db, user, q=q, sort=sort, limit=limit, offset=offset)
+    documents, total = service.list_documents(
+        db, user, q=q, collection_id=collection_id, sort=sort, limit=limit, offset=offset
+    )
     counts = service.highlight_counts(db, [d.id for d in documents])
     return Page(items=[service.to_summary(d, counts.get(d.id, 0)) for d in documents], total=total)
 

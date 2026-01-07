@@ -43,10 +43,13 @@ def list_highlights(
     tag: str | None = None,
     color: Color | None = None,
     document_id: int | None = None,
+    collection_id: int | None = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> Page[HighlightWithDocument]:
-    query = service.filtered_query(user, q=q, tag=tag, color=color, document_id=document_id)
+    query = service.filtered_query(
+        user, q=q, tag=tag, color=color, document_id=document_id, collection_id=collection_id
+    )
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
     rows = db.scalars(
         query.order_by(Highlight.created_at.desc(), Highlight.id.desc()).limit(limit).offset(offset)
