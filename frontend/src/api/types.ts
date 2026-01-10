@@ -34,6 +34,7 @@ export interface DocumentDetail extends DocumentSummary {
   content: string;
   original_filename: string | null;
   source_url: string | null;
+  collections: { id: number; name: string }[];
 }
 
 export const COLORS = ['yellow', 'green', 'blue', 'pink', 'purple'] as const;
@@ -60,4 +61,17 @@ export interface Tag {
   id: number;
   name: string;
   highlight_count: number;
+}
+
+export interface Collection {
+  id: number;
+  name: string;
+  description: string | null;
+  document_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CollectionDetail extends Collection {
+  documents: DocumentSummary[];
 }
