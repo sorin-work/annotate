@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router';
 import { GuestOnly, RequireAuth } from './auth/guards';
 import Layout from './components/Layout';
+import CollectionPage from './pages/CollectionPage';
+import CollectionsPage from './pages/CollectionsPage';
 import DocumentPage from './pages/DocumentPage';
 import HighlightsPage from './pages/HighlightsPage';
 import LibraryPage from './pages/LibraryPage';
@@ -39,6 +41,8 @@ export default function App() {
         <Route path="documents/new" element={<NewDocumentPage />} />
         <Route path="documents/:id" element={<DocumentPage />} />
         <Route path="highlights" element={<HighlightsPage />} />
+        <Route path="collections" element={<CollectionsPage />} />
+        <Route path="collections/:id" element={<CollectionPage />} />
         <Route path="tags" element={<TagsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

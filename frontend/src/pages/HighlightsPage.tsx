@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
+import { collectionsApi } from '../api/collections';
 import { highlightsApi } from '../api/highlights';
 import { tagsApi } from '../api/tags';
 import { COLORS } from '../api/types';
@@ -16,13 +17,18 @@ export default function HighlightsPage() {
   const [params, setParams] = useSearchParams();
   const tag = params.get('tag');
   const color = params.get('color') as Color | null;
+  const collectionId = params.get('collection') ? Number(params.get('collection')) : null;
 
   const { data: tags = [] } = useQuery({ queryKey: ['tags'], queryFn: tagsApi.list });
+  const { data: collections = [] } = useQuery({
+    queryKey: ['collections'],
+    queryFn: collectionsApi.list,
+  });
 
   const query = useInfiniteQuery({
-    queryKey: ['highlights-all', { tag, color }],
+    queryKey: ['highlights-all', { tag, color, collectionId }],
     queryFn: ({ pageParam }) =>
-      highlightsApi.list({ tag, color, limit: PAGE_SIZE, offset: pageParam }),
+      highlightsApi.list({ tag, color, collectionId, limit: PAGE_SIZE, offset: pageParam }),
     initialPageParam: 0,
     getNextPageParam: (last, pages) => {
       const loaded = pages.reduce((sum, p) => sum + p.items.length, 0);
@@ -39,7 +45,7 @@ export default function HighlightsPage() {
 
   const items = query.data?.pages.flatMap((p) => p.items) ?? [];
   const total = query.data?.pages[0]?.total ?? 0;
-  const filtered = Boolean(tag || color);
+  const filtered = Boolean(tag || color || collectionId);
 
   return (
     <>
@@ -69,6 +75,18 @@ export default function HighlightsPage() {
           {COLORS.map((c) => (
             <option key={c} value={c}>
               {c}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Collection"
+          value={collectionId ?? ''}
+          onChange={(e) => update('collection', e.target.value || null)}
+        >
+          <option value="">All collections</option>
+          {collections.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
             </option>
           ))}
         </select>

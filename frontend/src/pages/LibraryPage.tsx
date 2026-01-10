@@ -1,5 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router';
+import { collectionsApi } from '../api/collections';
 import { documentsApi } from '../api/documents';
 import type { DocumentSort } from '../api/documents';
 import EmptyState from '../components/EmptyState';
@@ -14,14 +15,20 @@ export default function LibraryPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get('q') ?? '';
   const sort = (params.get('sort') as DocumentSort | null) ?? 'recent';
+  const collectionId = params.get('collection') ? Number(params.get('collection')) : null;
   const page = parsePage(params.get('page'));
 
+  const { data: collections = [] } = useQuery({
+    queryKey: ['collections'],
+    queryFn: collectionsApi.list,
+  });
   const { data, isPending, error } = useQuery({
-    queryKey: ['documents', { q, sort, page }],
+    queryKey: ['documents', { q, sort, collectionId, page }],
     queryFn: () =>
       documentsApi.list({
         q,
         sort,
+        collectionId,
         limit: PAGE_SIZE,
         offset: (page - 1) * PAGE_SIZE,
       }),
@@ -37,7 +44,7 @@ export default function LibraryPage() {
   }
 
   const pages = data ? Math.ceil(data.total / PAGE_SIZE) : 1;
-  const filtered = Boolean(q);
+  const filtered = Boolean(q || collectionId);
 
   return (
     <>
@@ -59,6 +66,18 @@ export default function LibraryPage() {
           value={q}
           onChange={(e) => update('q', e.target.value)}
         />
+        <select
+          aria-label="Collection"
+          value={collectionId ?? ''}
+          onChange={(e) => update('collection', e.target.value)}
+        >
+          <option value="">All collections</option>
+          {collections.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
         <select aria-label="Sort" value={sort} onChange={(e) => update('sort', e.target.value)}>
           <option value="recent">Recently added</option>
           <option value="title">Title</option>

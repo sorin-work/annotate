@@ -6,8 +6,10 @@ import { highlightsApi } from '../api/highlights';
 import type { HighlightChanges } from '../api/highlights';
 import { tagsApi } from '../api/tags';
 import type { Color, Highlight } from '../api/types';
+import AddToCollection from '../components/AddToCollection';
 import ErrorMessage from '../components/ErrorMessage';
 import HighlightEditor from '../components/HighlightEditor';
+import Modal from '../components/Modal';
 import Reader from '../components/Reader';
 import type { SelectionInfo } from '../components/Reader';
 import SelectionToolbar from '../components/SelectionToolbar';
@@ -23,6 +25,7 @@ export default function DocumentPage() {
   const [activeId, setActiveId] = useState<number | null>(() =>
     params.get('highlight') ? Number(params.get('highlight')) : null,
   );
+  const [organising, setOrganising] = useState(false);
 
   const documentQuery = useQuery({
     queryKey: ['document', id],
@@ -86,6 +89,7 @@ export default function DocumentPage() {
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: ['document', id] });
       refreshRelated();
+      queryClient.invalidateQueries({ queryKey: ['collections'] });
       navigate('/', { replace: true });
     },
   });
@@ -134,7 +138,19 @@ export default function DocumentPage() {
               </>
             )}
           </p>
+          {doc.collections.length > 0 && (
+            <p className="collections-line">
+              {doc.collections.map((c) => (
+                <Link key={c.id} to={`/collections/${c.id}`} className="chip">
+                  {c.name}
+                </Link>
+              ))}
+            </p>
+          )}
           <div className="document-actions">
+            <button type="button" className="button small" onClick={() => setOrganising(true)}>
+              Collections
+            </button>
             <button
               type="button"
               className="button small danger"
@@ -197,6 +213,12 @@ export default function DocumentPage() {
           ))}
         </ul>
       </aside>
+
+      {organising && (
+        <Modal title="Collections" onClose={() => setOrganising(false)}>
+          <AddToCollection document={doc} />
+        </Modal>
+      )}
     </div>
   );
 }
