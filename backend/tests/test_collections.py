@@ -25,6 +25,18 @@ def test_collection_names_are_unique_per_user(client, auth):
     assert client.post("/api/collections", json={"name": "Books"}, headers=other).status_code == 201
 
 
+def test_rename_collection_rejects_blank_names(client, auth):
+    collection = make_collection(client, auth, "Essays")
+    url = f"/api/collections/{collection['id']}"
+
+    response = client.patch(url, json={"name": "   "}, headers=auth)
+    assert response.status_code == 422
+    assert client.get(url, headers=auth).json()["name"] == "Essays"
+
+    response = client.patch(url, json={"name": "  Long reads "}, headers=auth)
+    assert response.json()["name"] == "Long reads"
+
+
 def test_add_and_remove_documents(client, auth, document):
     collection = make_collection(client, auth)
     url = f"/api/collections/{collection['id']}/documents"

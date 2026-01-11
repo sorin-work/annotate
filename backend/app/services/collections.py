@@ -47,7 +47,7 @@ def update_collection(
 ) -> Collection:
     changes = data.model_dump(exclude_unset=True)
     if changes.get("name"):
-        name = changes["name"].strip()
+        name = changes["name"]
         if _name_taken(db, user, name, exclude_id=collection.id):
             raise ConflictError("You already have a collection with this name")
         collection.name = name
