@@ -1,12 +1,14 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
 import { collectionsApi } from '../api/collections';
+import { exportsApi } from '../api/exports';
 import { highlightsApi } from '../api/highlights';
 import { tagsApi } from '../api/tags';
 import { COLORS } from '../api/types';
 import type { Color } from '../api/types';
 import EmptyState from '../components/EmptyState';
 import ErrorMessage from '../components/ErrorMessage';
+import ExportButtons from '../components/ExportButtons';
 import HighlightCard from '../components/HighlightCard';
 import PageHeader from '../components/PageHeader';
 import { plural } from '../lib/format';
@@ -52,6 +54,12 @@ export default function HighlightsPage() {
       <PageHeader
         title="Highlights"
         subtitle={query.data ? plural(total, 'highlight') : undefined}
+        actions={
+          <ExportButtons
+            label={filtered ? 'Export filtered' : 'Export all'}
+            onExport={(format) => exportsApi.highlights(format, { tag, color, collectionId })}
+          />
+        }
       />
       <div className="toolbar">
         <select

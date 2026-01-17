@@ -2,12 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { documentsApi } from '../api/documents';
+import { exportsApi } from '../api/exports';
 import { highlightsApi } from '../api/highlights';
 import type { HighlightChanges } from '../api/highlights';
 import { tagsApi } from '../api/tags';
 import type { Color, Highlight } from '../api/types';
 import AddToCollection from '../components/AddToCollection';
 import ErrorMessage from '../components/ErrorMessage';
+import ExportButtons from '../components/ExportButtons';
 import HighlightEditor from '../components/HighlightEditor';
 import Modal from '../components/Modal';
 import Reader from '../components/Reader';
@@ -190,6 +192,7 @@ export default function DocumentPage() {
       <aside className="document-sidebar" aria-label="Highlights">
         <div className="sidebar-header">
           <h2>{plural(highlights.length, 'highlight')}</h2>
+          <ExportButtons label="Export" onExport={(format) => exportsApi.document(id, format)} />
         </div>
         {highlights.length === 0 && (
           <p className="muted small">

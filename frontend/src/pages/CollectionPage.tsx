@@ -3,8 +3,10 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { collectionsApi } from '../api/collections';
+import { exportsApi } from '../api/exports';
 import EmptyState from '../components/EmptyState';
 import ErrorMessage from '../components/ErrorMessage';
+import ExportButtons from '../components/ExportButtons';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import { plural } from '../lib/format';
@@ -72,6 +74,10 @@ export default function CollectionPage() {
         subtitle={collection.description ?? plural(collection.document_count, 'document')}
         actions={
           <>
+            <ExportButtons
+              label="Export highlights"
+              onExport={(format) => exportsApi.highlights(format, { collectionId: id })}
+            />
             <button type="button" className="button" onClick={startEditing}>
               Edit
             </button>
