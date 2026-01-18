@@ -3,6 +3,7 @@
 import csv
 import io
 import re
+import unicodedata
 from collections.abc import Iterable
 from datetime import UTC, datetime
 from itertools import groupby
@@ -24,7 +25,9 @@ CSV_COLUMNS = [
 
 
 def slugify(value: str, fallback: str = "annotations") -> str:
-    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    # Fold accents first ("Însemnări" -> "Insemnari") so they don't vanish from file names.
+    ascii_value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode()
+    slug = re.sub(r"[^a-z0-9]+", "-", ascii_value.lower()).strip("-")
     return slug[:60].strip("-") or fallback
 
 

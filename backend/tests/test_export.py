@@ -1,6 +1,7 @@
 import csv
 import io
 
+from app.services.export import slugify
 from tests.conftest import highlight
 
 
@@ -75,3 +76,9 @@ def test_export_collection(client, auth, document):
 def test_export_requires_valid_format(client, auth, document):
     response = client.get(f"/api/documents/{document['id']}/export?format=pdf", headers=auth)
     assert response.status_code == 422
+
+
+def test_slugify_folds_accents_and_falls_back():
+    assert slugify("Însemnări și gânduri") == "insemnari-si-ganduri"
+    assert slugify("Ça, c'est la vie!") == "ca-c-est-la-vie"
+    assert slugify("読書ノート") == "annotations"
