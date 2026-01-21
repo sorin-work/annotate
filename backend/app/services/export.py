@@ -77,6 +77,13 @@ def highlights_markdown(highlights: Iterable[Highlight], title: str = "Highlight
     return "\n".join(lines).rstrip() + "\n"
 
 
+def _safe_cell(value: str) -> str:
+    # Spreadsheets treat cells starting with these characters as formulas.
+    if value and value[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + value
+    return value
+
+
 def highlights_csv(highlights: Iterable[Highlight]) -> str:
     buffer = io.StringIO()
     writer = csv.writer(buffer, lineterminator="\n")
@@ -84,11 +91,11 @@ def highlights_csv(highlights: Iterable[Highlight]) -> str:
     for h in highlights:
         writer.writerow(
             [
-                h.document.title,
-                h.document.author or "",
+                _safe_cell(h.document.title),
+                _safe_cell(h.document.author or ""),
                 h.id,
-                h.quote,
-                h.note or "",
+                _safe_cell(h.quote),
+                _safe_cell(h.note or ""),
                 "; ".join(tag.name for tag in h.tags),
                 h.color,
                 h.start_offset,

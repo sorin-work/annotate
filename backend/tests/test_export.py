@@ -35,6 +35,13 @@ def test_export_document_csv(client, auth, document):
     assert rows[0]["tags"] == "a; b"
 
 
+def test_csv_export_neutralises_formulas(client, auth, document):
+    highlight(client, auth, document, "lazy dog", note='=HYPERLINK("http://evil")')
+    response = client.get(f"/api/documents/{document['id']}/export?format=csv", headers=auth)
+    rows = list(csv.DictReader(io.StringIO(response.text)))
+    assert rows[0]["note"].startswith("'=")
+
+
 def test_export_all_highlights_grouped_by_document(client, auth, document):
     second = client.post(
         "/api/documents",
