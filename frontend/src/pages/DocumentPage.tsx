@@ -8,6 +8,8 @@ import type { HighlightChanges } from '../api/highlights';
 import { tagsApi } from '../api/tags';
 import type { Color, Highlight } from '../api/types';
 import AddToCollection from '../components/AddToCollection';
+import DocumentDetailsForm from '../components/DocumentDetailsForm';
+import type { DocumentDetails } from '../components/DocumentDetailsForm';
 import ErrorMessage from '../components/ErrorMessage';
 import ExportButtons from '../components/ExportButtons';
 import HighlightEditor from '../components/HighlightEditor';
@@ -27,6 +29,7 @@ export default function DocumentPage() {
   const [activeId, setActiveId] = useState<number | null>(() =>
     params.get('highlight') ? Number(params.get('highlight')) : null,
   );
+  const [editing, setEditing] = useState(false);
   const [organising, setOrganising] = useState(false);
 
   const documentQuery = useQuery({
@@ -83,6 +86,15 @@ export default function DocumentPage() {
       );
       setActiveId(null);
       refreshRelated();
+    },
+  });
+
+  const saveDetails = useMutation({
+    mutationFn: (details: DocumentDetails) => documentsApi.update(id, details),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['document', id], updated);
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      setEditing(false);
     },
   });
 
@@ -150,6 +162,9 @@ export default function DocumentPage() {
             </p>
           )}
           <div className="document-actions">
+            <button type="button" className="button small" onClick={() => setEditing(true)}>
+              Edit details
+            </button>
             <button type="button" className="button small" onClick={() => setOrganising(true)}>
               Collections
             </button>
@@ -217,6 +232,15 @@ export default function DocumentPage() {
         </ul>
       </aside>
 
+      {editing && (
+        <Modal title="Document details" onClose={() => setEditing(false)}>
+          <DocumentDetailsForm
+            document={doc}
+            onSubmit={(details) => saveDetails.mutateAsync(details)}
+            onCancel={() => setEditing(false)}
+          />
+        </Modal>
+      )}
       {organising && (
         <Modal title="Collections" onClose={() => setOrganising(false)}>
           <AddToCollection document={doc} />
