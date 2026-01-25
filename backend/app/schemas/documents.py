@@ -1,11 +1,26 @@
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
+from urllib.parse import urlsplit
 
-from pydantic import Field, field_validator
+from pydantic import AfterValidator, Field, field_validator
 
 from app.schemas.common import ApiModel
 
 SourceType = Literal["text", "markdown", "pdf"]
+
+
+def _check_source_url(value: str | None) -> str | None:
+    # The url is shown as a link, so anything but http(s) (javascript:, data:)
+    # would be a way to run code in the reader's browser.
+    value = (value or "").strip() or None
+    if value is not None and (
+        urlsplit(value).scheme.lower() not in ("http", "https") or not urlsplit(value).netloc
+    ):
+        raise ValueError("must be an http:// or https:// address")
+    return value
+
+
+SourceUrl = Annotated[str | None, Field(max_length=2000), AfterValidator(_check_source_url)]
 
 
 class DocumentCreate(ApiModel):
@@ -13,7 +28,7 @@ class DocumentCreate(ApiModel):
     content: str = Field(min_length=1, max_length=2_000_000)
     source_type: Literal["text", "markdown"] = "text"
     author: str | None = Field(default=None, max_length=200)
-    source_url: str | None = Field(default=None, max_length=2000)
+    source_url: SourceUrl = None
 
     @field_validator("title")
     @classmethod
@@ -27,7 +42,7 @@ class DocumentCreate(ApiModel):
 class DocumentUpdate(ApiModel):
     title: str | None = Field(default=None, min_length=1, max_length=300)
     author: str | None = Field(default=None, max_length=200)
-    source_url: str | None = Field(default=None, max_length=2000)
+    source_url: SourceUrl = None
 
 
 class CollectionRef(ApiModel):
