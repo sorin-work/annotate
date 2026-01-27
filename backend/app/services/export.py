@@ -96,7 +96,7 @@ def highlights_csv(highlights: Iterable[Highlight]) -> str:
                 h.id,
                 _safe_cell(h.quote),
                 _safe_cell(h.note or ""),
-                "; ".join(tag.name for tag in h.tags),
+                _safe_cell("; ".join(tag.name for tag in h.tags)),
                 h.color,
                 h.start_offset,
                 h.end_offset,

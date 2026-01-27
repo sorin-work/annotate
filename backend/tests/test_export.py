@@ -42,6 +42,13 @@ def test_csv_export_neutralises_formulas(client, auth, document):
     assert rows[0]["note"].startswith("'=")
 
 
+def test_csv_export_neutralises_formulas_in_tags(client, auth, document):
+    highlight(client, auth, document, "lazy dog", tags=["=sum(a1)", "reading"])
+    response = client.get(f"/api/documents/{document['id']}/export?format=csv", headers=auth)
+    rows = list(csv.DictReader(io.StringIO(response.text)))
+    assert rows[0]["tags"] == "'=sum(a1); reading"
+
+
 def test_export_all_highlights_grouped_by_document(client, auth, document):
     second = client.post(
         "/api/documents",
