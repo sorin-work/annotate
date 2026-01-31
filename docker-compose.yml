@@ -1,0 +1,59 @@
+name: annotate
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: annotate
+      POSTGRES_PASSWORD: annotate
+      POSTGRES_DB: annotate
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - '${DB_PORT:-5433}:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U annotate -d annotate']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://annotate:annotate@db:5432/annotate
+      JWT_SECRET: ${JWT_SECRET:-local-development-secret-change-me-0123456789}
+      CORS_ORIGINS: http://localhost:${WEB_PORT:-5174}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - '${API_PORT:-4100}:8000'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')",
+        ]
+      interval: 10s
+      timeout: 3s
+      start_period: 20s
+      retries: 5
+
+  web:
+    build: ./frontend
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - '${WEB_PORT:-5174}:80'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1/']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  db-data:
