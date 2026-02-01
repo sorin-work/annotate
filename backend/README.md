@@ -14,3 +14,4 @@ uvicorn app.main:app --reload --port 4100
 
 - `pytest` runs the test suite against an in-memory SQLite database.
 - `ruff check . && ruff format --check .` lints and checks formatting.
+- `python -m app.seed` creates the demo user (`demo@example.com` / `demo-password`).
