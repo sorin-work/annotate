@@ -3,6 +3,7 @@ name: annotate
 services:
   db:
     image: postgres:17-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: annotate
       POSTGRES_PASSWORD: annotate
@@ -19,6 +20,7 @@ services:
 
   api:
     build: ./backend
+    restart: unless-stopped
     environment:
       DATABASE_URL: postgresql+psycopg://annotate:annotate@db:5432/annotate
       JWT_SECRET: ${JWT_SECRET:-local-development-secret-change-me-0123456789}
@@ -46,6 +48,7 @@ services:
 
   web:
     build: ./frontend
+    restart: unless-stopped
     depends_on:
       api:
         condition: service_healthy
