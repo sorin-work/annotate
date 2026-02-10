@@ -1,5 +1,6 @@
 """Consistent JSON errors: ``{"error": {"code": "...", "message": "..."}}``."""
 
+import logging
 from typing import Any
 
 from fastapi import FastAPI, Request
@@ -7,6 +8,8 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+
+logger = logging.getLogger("app.errors")
 
 
 class AppError(Exception):
@@ -80,4 +83,12 @@ def register_error_handlers(app: FastAPI) -> None:
             error_body(code, str(exc.detail)),
             status_code=exc.status_code,
             headers=getattr(exc, "headers", None),
+        )
+
+    @app.exception_handler(Exception)
+    async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
+        # Anything else is a bug: log it with the traceback, but don't leak details.
+        logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+        return JSONResponse(
+            error_body("internal_error", "Something went wrong on our side"), status_code=500
         )
