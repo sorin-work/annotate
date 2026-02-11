@@ -24,3 +24,17 @@ def test_validation_errors_name_the_field(client):
     response = client.post("/api/auth/login", json={"email": "nope", "password": "x"})
     assert response.status_code == 422
     assert response.json()["error"]["message"].startswith("email:")
+
+
+def test_wrong_method_uses_error_format(client):
+    response = client.put("/api/health")
+    assert response.status_code == 405
+    assert response.json()["error"]["code"] == "method_not_allowed"
+
+
+def test_missing_token_is_a_json_401(client):
+    response = client.get("/api/auth/me")
+    assert response.status_code == 401
+    assert response.json() == {
+        "error": {"code": "unauthorized", "message": "Authentication required"}
+    }
