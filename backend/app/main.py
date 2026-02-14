@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.router import api_router
 from app.config import get_settings
 from app.errors import register_error_handlers
+from app.middleware import REQUEST_ID_HEADER, RequestLogMiddleware
 
 
 def create_app() -> FastAPI:
@@ -21,8 +22,9 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
-        expose_headers=["Content-Disposition"],
+        expose_headers=["Content-Disposition", REQUEST_ID_HEADER],
     )
+    app.add_middleware(RequestLogMiddleware)
     register_error_handlers(app)
     app.include_router(api_router)
     return app
