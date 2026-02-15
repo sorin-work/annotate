@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it } from 'vitest';
 import HighlightCard from './HighlightCard';
@@ -43,5 +44,19 @@ describe('HighlightCard', () => {
       </MemoryRouter>,
     );
     expect(screen.queryByRole('link', { name: 'Walden' })).not.toBeInTheDocument();
+  });
+
+  it('copies the highlight as a markdown quote', async () => {
+    const events = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <HighlightCard highlight={highlight} />
+      </MemoryRouter>,
+    );
+    await events.click(screen.getByRole('button', { name: 'Copy' }));
+    expect(await navigator.clipboard.readText()).toBe(
+      '> Simplicity, simplicity, simplicity!\n>\n> — Walden\n\nStill true.',
+    );
+    expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument();
   });
 });

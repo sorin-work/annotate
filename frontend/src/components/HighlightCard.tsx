@@ -1,6 +1,8 @@
 import { Link } from 'react-router';
 import type { Highlight, HighlightWithDocument } from '../api/types';
 import { timeAgo } from '../lib/format';
+import { quoteAsMarkdown } from '../lib/quote';
+import CopyButton from './CopyButton';
 
 interface Props {
   highlight: Highlight | HighlightWithDocument;
@@ -33,6 +35,10 @@ export default function HighlightCard({ highlight, showDocument = true }: Props)
             </>
           )}
           {timeAgo(highlight.created_at)}
+          {' · '}
+          <CopyButton
+            text={quoteAsMarkdown(highlight.quote, { title: documentTitle, note: highlight.note })}
+          />
         </span>
       </footer>
     </article>
