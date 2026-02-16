@@ -23,3 +23,9 @@ def test_logs_one_line_per_request(client, caplog):
     assert len(lines) == 1
     assert lines[0].startswith("GET /api/nope 404 ")
     assert lines[0].endswith("id=req-1")
+
+
+def test_error_responses_carry_the_request_id_too(client):
+    response = client.get("/api/documents", headers={"X-Request-ID": "trace-me"})
+    assert response.status_code == 401
+    assert response.headers["x-request-id"] == "trace-me"
