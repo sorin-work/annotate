@@ -20,6 +20,12 @@ export class ApiError extends Error {
 
 type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
+/** Called when the API rejects our token, so the app can sign the user out. */
+let onUnauthorized: (() => void) | null = null;
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  onUnauthorized = handler;
+}
+
 async function send(
   method: Method,
   path: string,
@@ -35,6 +41,7 @@ async function send(
   if (!res.ok) {
     const data = await res.json().catch(() => null);
     const error = data?.error;
+    if (res.status === 401 && token) onUnauthorized?.();
     throw new ApiError(res.status, error?.message ?? `Request failed (${res.status})`, error?.code);
   }
   return res;

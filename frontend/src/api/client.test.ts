@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ApiError, api, toQuery, tokenStore } from './client';
+import { ApiError, api, setUnauthorizedHandler, toQuery, tokenStore } from './client';
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  setUnauthorizedHandler(null);
+});
 
 function stubFetch(response: Response) {
   const fetchMock = vi.fn(async () => response);
@@ -38,6 +41,15 @@ describe('api client', () => {
     const error = await api.get('/documents/1').catch((e) => e);
     expect(error).toBeInstanceOf(ApiError);
     expect(error).toMatchObject({ status: 404, code: 'not_found', message: 'Document not found' });
+  });
+
+  it('calls the unauthorized handler when a token is rejected', async () => {
+    tokenStore.set('expired');
+    const handler = vi.fn();
+    setUnauthorizedHandler(handler);
+    stubFetch(new Response('{}', { status: 401 }));
+    await expect(api.get('/auth/me')).rejects.toThrow('Request failed (401)');
+    expect(handler).toHaveBeenCalledOnce();
   });
 
   it('returns undefined for 204 responses', async () => {

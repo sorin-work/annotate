@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { authApi } from '../api/auth';
-import { tokenStore } from '../api/client';
+import { setUnauthorizedHandler, tokenStore } from '../api/client';
 import type { TokenResponse, User } from '../api/types';
 
 interface AuthState {
@@ -26,6 +26,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     queryClient.clear();
   }, [queryClient]);
+
+  useEffect(() => {
+    setUnauthorizedHandler(signOut);
+    return () => setUnauthorizedHandler(null);
+  }, [signOut]);
 
   useEffect(() => {
     if (!tokenStore.get()) return;
