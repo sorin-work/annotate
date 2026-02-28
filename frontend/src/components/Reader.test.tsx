@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Highlight } from '../api/types';
 import Reader from './Reader';
@@ -71,5 +71,30 @@ describe('Reader', () => {
     );
     expect(screen.getByText('# Title')).toBeInTheDocument();
     expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+  });
+
+  it('reports selections made without the mouse', async () => {
+    const onSelect = vi.fn();
+    render(
+      <Reader
+        content={CONTENT}
+        sourceType="markdown"
+        highlights={[]}
+        onSelect={onSelect}
+        onHighlightClick={() => {}}
+      />,
+    );
+    const text = screen.getByText('The quick brown fox jumps.').firstChild!;
+    const range = document.createRange();
+    range.setStart(text, 4);
+    range.setEnd(text, 9);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(range);
+    document.dispatchEvent(new Event('selectionchange'));
+
+    const start = CONTENT.indexOf('quick');
+    await waitFor(() =>
+      expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ start, end: start + 5 })),
+    );
   });
 });
