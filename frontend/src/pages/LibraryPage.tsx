@@ -8,6 +8,7 @@ import ErrorMessage from '../components/ErrorMessage';
 import PageHeader from '../components/PageHeader';
 import { plural, readingTime, timeAgo } from '../lib/format';
 import { parsePage } from '../lib/params';
+import { useDebouncedValue } from '../lib/useDebouncedValue';
 
 const PAGE_SIZE = 20;
 
@@ -17,16 +18,18 @@ export default function LibraryPage() {
   const sort = (params.get('sort') as DocumentSort | null) ?? 'recent';
   const collectionId = params.get('collection') ? Number(params.get('collection')) : null;
   const page = parsePage(params.get('page'));
+  // Typing in the filter updates the url right away but only queries once it settles.
+  const search = useDebouncedValue(q.trim(), 250);
 
   const { data: collections = [] } = useQuery({
     queryKey: ['collections'],
     queryFn: collectionsApi.list,
   });
   const { data, isPending, error } = useQuery({
-    queryKey: ['documents', { q, sort, collectionId, page }],
+    queryKey: ['documents', { q: search, sort, collectionId, page }],
     queryFn: () =>
       documentsApi.list({
-        q,
+        q: search,
         sort,
         collectionId,
         limit: PAGE_SIZE,
