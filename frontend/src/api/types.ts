@@ -75,3 +75,9 @@ export interface Collection {
 export interface CollectionDetail extends Collection {
   documents: DocumentSummary[];
 }
+
+export interface SearchResults {
+  query: string;
+  documents: { id: number; title: string; author: string | null; snippet: string }[];
+  highlights: HighlightWithDocument[];
+}

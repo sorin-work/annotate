@@ -1,4 +1,6 @@
-import { NavLink, Outlet } from 'react-router';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
+import { NavLink, Outlet, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 
 const NAV = [
@@ -10,6 +12,14 @@ const NAV = [
 
 export default function Layout() {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+
+  function onSearch(event: FormEvent) {
+    event.preventDefault();
+    const q = query.trim();
+    if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
+  }
 
   return (
     <div className="app">
@@ -25,6 +35,15 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
+        <form className="topsearch" role="search" onSubmit={onSearch}>
+          <input
+            type="search"
+            placeholder="Search notes and documents"
+            aria-label="Search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </form>
         <div className="topbar-user">
           <span className="user-link" title={user?.email}>
             {user?.display_name || user?.email}
