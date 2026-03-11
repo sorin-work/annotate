@@ -11,7 +11,7 @@ from app.services.pdf import extract_pdf
 
 TEXT_EXTENSIONS = {".txt": "text", ".text": "text", ".md": "markdown", ".markdown": "markdown"}
 SORTS = {
-    "recent": (Document.created_at.desc(),),
+    "recent": (func.coalesce(Document.last_opened_at, Document.created_at).desc(),),
     "created": (Document.created_at.desc(),),
     "title": (func.lower(Document.title).asc(),),
 }
@@ -151,6 +151,7 @@ def to_summary(document: Document, highlight_count: int = 0) -> DocumentSummary:
         excerpt=textutil.excerpt(document.content),
         created_at=document.created_at,
         updated_at=document.updated_at,
+        last_opened_at=document.last_opened_at,
     )
 
 

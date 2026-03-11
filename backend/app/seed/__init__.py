@@ -267,6 +267,7 @@ def seed_demo(db: Session) -> bool:
             source_url=sample.source_url,
             created_at=created,
             updated_at=created,
+            last_opened_at=created + timedelta(days=min(sample.days_ago - 1, 3)),
         )
         db.add(document)
         documents[sample.file] = document

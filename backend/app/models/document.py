@@ -27,6 +27,7 @@ class Document(Base):
     source_url: Mapped[str | None] = mapped_column(String(2000))
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(default=utcnow, onupdate=utcnow)
+    last_opened_at: Mapped[datetime | None] = mapped_column()
 
     highlights: Mapped[list["Highlight"]] = relationship(
         back_populates="document",

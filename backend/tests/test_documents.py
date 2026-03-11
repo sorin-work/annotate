@@ -14,9 +14,11 @@ def test_create_and_get_document(client, auth):
     assert created["content"] == "Line one\nLine two"
     assert created["word_count"] == 4
     assert created["source_type"] == "markdown"
+    assert created["last_opened_at"] is None
 
     fetched = client.get(f"/api/documents/{created['id']}", headers=auth).json()
     assert fetched["content"] == "Line one\nLine two"
+    assert fetched["last_opened_at"] is not None
     assert fetched["highlight_count"] == 0
 
 
@@ -61,6 +63,15 @@ def test_list_documents_search_sort_and_paginate(client, auth):
 
     found = client.get("/api/documents?q=ALP", headers=auth).json()
     assert [d["title"] for d in found["items"]] == ["alpha"]
+
+
+def test_recent_sort_prefers_recently_opened(client, auth):
+    first = client.post("/api/documents", json={"title": "First", "content": "a"}, headers=auth)
+    client.post("/api/documents", json={"title": "Second", "content": "b"}, headers=auth)
+    client.get(f"/api/documents/{first.json()['id']}", headers=auth)
+
+    titles = [d["title"] for d in client.get("/api/documents", headers=auth).json()["items"]]
+    assert titles == ["First", "Second"]
 
 
 def test_update_document_metadata(client, auth, document):

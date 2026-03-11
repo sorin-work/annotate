@@ -60,6 +60,7 @@ class DocumentSummary(ApiModel):
     excerpt: str = ""
     created_at: datetime
     updated_at: datetime
+    last_opened_at: datetime | None
 
 
 class DocumentDetail(DocumentSummary):

@@ -82,7 +82,8 @@ export default function LibraryPage() {
           ))}
         </select>
         <select aria-label="Sort" value={sort} onChange={(e) => update('sort', e.target.value)}>
-          <option value="recent">Recently added</option>
+          <option value="recent">Recently read</option>
+          <option value="created">Recently added</option>
           <option value="title">Title</option>
         </select>
       </div>
@@ -114,8 +115,10 @@ export default function LibraryPage() {
               {doc.author && <p className="author">{doc.author}</p>}
               <p className="excerpt">{doc.excerpt}</p>
               <p className="meta muted small">
-                {plural(doc.highlight_count, 'highlight')} · {readingTime(doc.word_count)} · added{' '}
-                {timeAgo(doc.created_at)}
+                {plural(doc.highlight_count, 'highlight')} · {readingTime(doc.word_count)} ·{' '}
+                {doc.last_opened_at
+                  ? `opened ${timeAgo(doc.last_opened_at)}`
+                  : `added ${timeAgo(doc.created_at)}`}
               </p>
             </Link>
           </li>
