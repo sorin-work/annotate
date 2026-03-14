@@ -1,8 +1,9 @@
 from pathlib import PurePath
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 
+from app.db import utcnow
 from app.errors import AppError, NotFoundError
 from app.models import Collection, Document, Highlight, User, collection_documents
 from app.schemas.documents import DocumentCreate, DocumentDetail, DocumentSummary, DocumentUpdate
@@ -77,6 +78,18 @@ def get_document(db: Session, user: User, document_id: int) -> Document:
     if document is None or document.owner_id != user.id:
         raise NotFoundError("Document not found")
     return document
+
+
+def mark_opened(db: Session, document: Document) -> None:
+    """Remember when a document was last read without bumping ``updated_at``."""
+    opened_at = utcnow()
+    db.execute(
+        update(Document)
+        .where(Document.id == document.id)
+        .values(last_opened_at=opened_at, updated_at=Document.updated_at)
+    )
+    db.commit()
+    document.last_opened_at = opened_at
 
 
 def update_document(db: Session, document: Document, data: DocumentUpdate) -> Document:

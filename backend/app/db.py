@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, MetaData, create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from sqlalchemy.types import TypeDecorator
 
 from app.config import get_settings
 
@@ -16,9 +17,21 @@ NAMING_CONVENTION = {
 }
 
 
+class UTCDateTime(TypeDecorator[datetime]):
+    """Timezone-aware timestamps, also on SQLite (which drops the offset)."""
+
+    impl = DateTime(timezone=True)
+    cache_ok = True
+
+    def process_result_value(self, value: datetime | None, dialect) -> datetime | None:
+        if value is not None and value.tzinfo is None:
+            return value.replace(tzinfo=UTC)
+        return value
+
+
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
-    type_annotation_map = {datetime: DateTime(timezone=True)}
+    type_annotation_map = {datetime: UTCDateTime()}
 
 
 def utcnow() -> datetime:

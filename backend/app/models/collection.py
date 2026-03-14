@@ -1,10 +1,10 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, Table, Text
+from sqlalchemy import Column, ForeignKey, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db import Base, utcnow
+from app.db import Base, UTCDateTime, utcnow
 
 if TYPE_CHECKING:
     from app.models.document import Document
@@ -14,7 +14,7 @@ collection_documents = Table(
     Base.metadata,
     Column("collection_id", ForeignKey("collections.id", ondelete="CASCADE"), primary_key=True),
     Column("document_id", ForeignKey("documents.id", ondelete="CASCADE"), primary_key=True),
-    Column("added_at", DateTime(timezone=True), default=utcnow, nullable=False),
+    Column("added_at", UTCDateTime(), default=utcnow, nullable=False),
 )
 
 

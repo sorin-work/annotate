@@ -3,7 +3,6 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, File, Form, Query, Response, UploadFile, status
 
 from app.config import get_settings
-from app.db import utcnow
 from app.deps import CurrentUser, DbSession
 from app.errors import AppError
 from app.schemas.common import Page
@@ -57,8 +56,7 @@ async def upload_document(
 @router.get("/{document_id}")
 def get_document(document_id: int, user: CurrentUser, db: DbSession) -> DocumentDetail:
     document = service.get_document(db, user, document_id)
-    document.last_opened_at = utcnow()
-    db.commit()
+    service.mark_opened(db, document)
     return service.to_detail(document)
 
 

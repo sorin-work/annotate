@@ -22,6 +22,11 @@ def test_create_and_get_document(client, auth):
     assert fetched["highlight_count"] == 0
 
 
+def test_opening_a_document_does_not_change_updated_at(client, auth, document):
+    fetched = client.get(f"/api/documents/{document['id']}", headers=auth).json()
+    assert fetched["updated_at"] == document["updated_at"]
+
+
 def test_create_document_validation(client, auth):
     response = client.post("/api/documents", json={"title": "  ", "content": "x"}, headers=auth)
     assert response.status_code == 422
