@@ -135,8 +135,13 @@ def list_documents(
 ) -> tuple[list[Document], int]:
     query = select(Document).where(Document.owner_id == user.id)
     if q:
-        pattern = f"%{q.strip()}%"
-        query = query.where(or_(Document.title.ilike(pattern), Document.author.ilike(pattern)))
+        pattern = textutil.like_pattern(q)
+        query = query.where(
+            or_(
+                Document.title.ilike(pattern, escape=textutil.LIKE_ESCAPE),
+                Document.author.ilike(pattern, escape=textutil.LIKE_ESCAPE),
+            )
+        )
     if collection_id is not None:
         collection = db.get(Collection, collection_id)
         if collection is None or collection.owner_id != user.id:

@@ -37,6 +37,23 @@ def snippet_around(text: str, needle: str, radius: int = 80) -> str:
     return f"{prefix}{window}{suffix}"
 
 
+LIKE_ESCAPE = "\\"
+
+
+def like_pattern(term: str) -> str:
+    """``%term%`` for ILIKE with ``%``, ``_`` and backslashes matched literally.
+
+    Pass ``escape=LIKE_ESCAPE`` alongside it.
+    """
+    escaped = (
+        term.strip()
+        .replace(LIKE_ESCAPE, LIKE_ESCAPE * 2)
+        .replace("%", LIKE_ESCAPE + "%")
+        .replace("_", LIKE_ESCAPE + "_")
+    )
+    return f"%{escaped}%"
+
+
 def markdown_title(text: str) -> str | None:
     """The first level-one heading of a Markdown document, if it starts with one."""
     for line in text.splitlines():

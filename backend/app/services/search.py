@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.models import Document, Highlight, User, collection_documents
 from app.schemas.search import DocumentHit, SearchResults
 from app.services import highlights as highlight_service
-from app.services.text import snippet_around
+from app.services.text import LIKE_ESCAPE, like_pattern, snippet_around
 
 
 def search(
@@ -22,13 +22,13 @@ def search(
 
     # Filters only make sense for highlights; a plain query also matches documents.
     if q and not tag and not color:
-        pattern = f"%{q}%"
+        pattern = like_pattern(q)
         query = select(Document).where(
             Document.owner_id == user.id,
             or_(
-                Document.title.ilike(pattern),
-                Document.author.ilike(pattern),
-                Document.content.ilike(pattern),
+                Document.title.ilike(pattern, escape=LIKE_ESCAPE),
+                Document.author.ilike(pattern, escape=LIKE_ESCAPE),
+                Document.content.ilike(pattern, escape=LIKE_ESCAPE),
             ),
         )
         if collection_id is not None:

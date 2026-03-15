@@ -1,6 +1,7 @@
 from app.services.text import (
     count_words,
     excerpt,
+    like_pattern,
     markdown_title,
     snippet_around,
 )
@@ -35,3 +36,9 @@ def test_markdown_title():
     assert markdown_title("\n# Hello world\n\nBody") == "Hello world"
     assert markdown_title("## Not level one\n") is None
     assert markdown_title("Body first\n# Later heading") is None
+
+
+def test_like_pattern_escapes_wildcards():
+    assert like_pattern(" 50% ") == "%50\\%%"
+    assert like_pattern("snake_case") == "%snake\\_case%"
+    assert like_pattern("a\\b") == "%a\\\\b%"

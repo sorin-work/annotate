@@ -54,3 +54,22 @@ def test_search_is_private(client, auth, document):
     other = register(client, "other@example.com")
     results = client.get("/api/search?q=dog", headers=other).json()
     assert results["documents"] == [] and results["highlights"] == []
+
+
+def test_percent_and_underscore_are_matched_literally(client, auth):
+    for title, content in [("50% done", "Half of it."), ("500 days", "Done in 50 weeks.")]:
+        client.post("/api/documents", json={"title": title, "content": content}, headers=auth)
+    doc = client.post(
+        "/api/documents", json={"title": "Code", "content": "Use snake_case names."}, headers=auth
+    ).json()
+    highlight(client, auth, doc, "snake_case")
+
+    results = client.get("/api/search?q=50%25", headers=auth).json()
+    assert [d["title"] for d in results["documents"]] == ["50% done"]
+
+    listed = client.get("/api/documents?q=50%25", headers=auth).json()
+    assert [d["title"] for d in listed["items"]] == ["50% done"]
+
+    found = client.get("/api/highlights?q=e_c", headers=auth).json()
+    assert [h["quote"] for h in found["items"]] == ["snake_case"]
+    assert client.get("/api/highlights?q=e_n", headers=auth).json()["total"] == 0

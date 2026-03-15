@@ -10,6 +10,7 @@ from app.schemas.highlights import (
     HighlightWithDocument,
 )
 from app.services.tags import get_or_create_tags
+from app.services.text import LIKE_ESCAPE, like_pattern
 
 
 def create_highlight(
@@ -90,10 +91,13 @@ def filtered_query(
         .options(selectinload(Highlight.tags), selectinload(Highlight.document))
     )
     if q:
-        pattern = f"%{q.strip()}%"
-        tag_match = Highlight.tags.any(Tag.name.ilike(pattern))
+        pattern = like_pattern(q)
         query = query.where(
-            or_(Highlight.quote.ilike(pattern), Highlight.note.ilike(pattern), tag_match)
+            or_(
+                Highlight.quote.ilike(pattern, escape=LIKE_ESCAPE),
+                Highlight.note.ilike(pattern, escape=LIKE_ESCAPE),
+                Highlight.tags.any(Tag.name.ilike(pattern, escape=LIKE_ESCAPE)),
+            )
         )
     if tag:
         query = query.where(Highlight.tags.any(Tag.name == tag))
