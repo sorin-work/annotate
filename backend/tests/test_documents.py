@@ -5,7 +5,7 @@ from tests.pdf_fixture import make_pdf
 def test_create_and_get_document(client, auth):
     response = client.post(
         "/api/documents",
-        json={"title": "  Notes  ", "content": "Line one\nLine two", "source_type": "markdown"},
+        json={"title": "  Notes  ", "content": "Line one\r\nLine two", "source_type": "markdown"},
         headers=auth,
     )
     assert response.status_code == 201
@@ -108,7 +108,7 @@ def test_documents_are_private(client, auth, document):
 def test_upload_markdown_uses_heading_as_title(client, auth):
     response = client.post(
         "/api/documents/upload",
-        files={"file": ("notes.md", b"# Big Idea\n\nSome words here.", "text/markdown")},
+        files={"file": ("notes.md", b"# Big Idea\r\n\r\nSome words here.", "text/markdown")},
         headers=auth,
     )
     assert response.status_code == 201, response.text
@@ -116,6 +116,7 @@ def test_upload_markdown_uses_heading_as_title(client, auth):
     assert body["title"] == "Big Idea"
     assert body["source_type"] == "markdown"
     assert body["original_filename"] == "notes.md"
+    assert "\r" not in body["content"]
 
 
 def test_upload_text_with_explicit_title(client, auth):

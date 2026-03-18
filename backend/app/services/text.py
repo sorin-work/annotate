@@ -6,6 +6,11 @@ _WORD_RE = re.compile(r"\w+(?:['’-]\w+)*")
 _HEADING_RE = re.compile(r"^#{1,6}\s+(.+?)\s*#*\s*$")
 
 
+def normalise_newlines(text: str) -> str:
+    """Use ``\\n`` everywhere so highlight offsets mean the same thing on every platform."""
+    return text.replace("\r\n", "\n").replace("\r", "\n")
+
+
 def count_words(text: str) -> int:
     return len(_WORD_RE.findall(text))
 

@@ -19,7 +19,7 @@ SORTS = {
 
 
 def create_document(db: Session, user: User, data: DocumentCreate) -> Document:
-    content = data.content
+    content = textutil.normalise_newlines(data.content)
     document = Document(
         owner_id=user.id,
         title=data.title,
@@ -57,6 +57,7 @@ def create_from_upload(
             "Unsupported file type. Upload a .txt, .md or .pdf file", code="unsupported_file"
         )
 
+    content = textutil.normalise_newlines(content)
     if not content.strip():
         raise AppError("The file is empty", code="invalid_file")
 

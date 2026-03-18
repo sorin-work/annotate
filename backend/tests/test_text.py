@@ -3,8 +3,13 @@ from app.services.text import (
     excerpt,
     like_pattern,
     markdown_title,
+    normalise_newlines,
     snippet_around,
 )
+
+
+def test_normalise_newlines():
+    assert normalise_newlines("a\r\nb\rc\n") == "a\nb\nc\n"
 
 
 def test_count_words_handles_contractions_and_hyphens():
