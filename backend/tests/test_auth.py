@@ -65,3 +65,35 @@ def test_me_requires_a_valid_token(client):
     response = client.get("/api/auth/me", headers={"Authorization": "Bearer garbage"})
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "unauthorized"
+
+
+def test_update_display_name(client, auth):
+    response = client.patch("/api/auth/me", json={"display_name": "Reader"}, headers=auth)
+    assert response.status_code == 200
+    assert response.json()["display_name"] == "Reader"
+
+    response = client.patch("/api/auth/me", json={"display_name": ""}, headers=auth)
+    assert response.json()["display_name"] is None
+
+
+def test_change_password(client, auth):
+    wrong = client.post(
+        "/api/auth/change-password",
+        json={"current_password": "nope", "new_password": "brand-new-password"},
+        headers=auth,
+    )
+    assert wrong.status_code == 400
+    assert wrong.json()["error"]["code"] == "invalid_password"
+
+    ok = client.post(
+        "/api/auth/change-password",
+        json={"current_password": "correct-horse-battery", "new_password": "brand-new-password"},
+        headers=auth,
+    )
+    assert ok.status_code == 204
+
+    login = client.post(
+        "/api/auth/login",
+        json={"email": "reader@example.com", "password": "brand-new-password"},
+    )
+    assert login.status_code == 200
