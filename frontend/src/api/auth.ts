@@ -11,4 +11,11 @@ export const authApi = {
       display_name: displayName || null,
     }),
   me: () => api.get<User>('/auth/me'),
+  updateProfile: (displayName: string) =>
+    api.patch<User>('/auth/me', { display_name: displayName }),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.post<void>('/auth/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
 };

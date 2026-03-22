@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage';
 import NewDocumentPage from './pages/NewDocumentPage';
 import RegisterPage from './pages/RegisterPage';
 import SearchPage from './pages/SearchPage';
+import SettingsPage from './pages/SettingsPage';
 import TagsPage from './pages/TagsPage';
 
 export default function App() {
@@ -46,6 +47,7 @@ export default function App() {
         <Route path="collections/:id" element={<CollectionPage />} />
         <Route path="tags" element={<TagsPage />} />
         <Route path="search" element={<SearchPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -45,9 +45,9 @@ export default function Layout() {
           />
         </form>
         <div className="topbar-user">
-          <span className="user-link" title={user?.email}>
+          <NavLink to="/settings" className="user-link" title={user?.email}>
             {user?.display_name || user?.email}
-          </span>
+          </NavLink>
           <button type="button" className="button-link" onClick={signOut}>
             Sign out
           </button>
