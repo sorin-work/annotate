@@ -23,6 +23,9 @@ export default function Layout() {
 
   return (
     <div className="app">
+      <a href="#main" className="skip-link">
+        Skip to content
+      </a>
       <header className="topbar">
         <NavLink to="/" className="brand" aria-label="annotate home">
           <span className="brand-mark" aria-hidden="true" />
@@ -53,7 +56,7 @@ export default function Layout() {
           </button>
         </div>
       </header>
-      <main className="content">
+      <main className="content" id="main" tabIndex={-1}>
         <Outlet />
       </main>
     </div>
