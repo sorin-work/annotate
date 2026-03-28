@@ -18,6 +18,7 @@ import Reader from '../components/Reader';
 import type { SelectionInfo } from '../components/Reader';
 import SelectionToolbar from '../components/SelectionToolbar';
 import { formatDate, plural, readingTime } from '../lib/format';
+import { scrollBehavior } from '../lib/motion';
 
 export default function DocumentPage() {
   const id = Number(useParams().id);
@@ -112,7 +113,7 @@ export default function DocumentPage() {
   useEffect(() => {
     if (activeId === null || !highlights.length) return;
     const mark = document.querySelector(`mark[data-highlight-id="${activeId}"]`);
-    mark?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+    mark?.scrollIntoView?.({ block: 'center', behavior: scrollBehavior() });
   }, [activeId, highlights.length]);
 
   const onSelect = useCallback((info: SelectionInfo | null) => setSelection(info), []);
