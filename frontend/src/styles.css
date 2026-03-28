@@ -255,6 +255,11 @@ main:focus {
   outline: none;
 }
 
+.error-panel {
+  max-width: 34rem;
+  margin: 2rem auto;
+}
+
 .skip-link {
   position: absolute;
   top: -100px;

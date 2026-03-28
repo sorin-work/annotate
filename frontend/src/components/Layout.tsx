@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
+import ErrorBoundary from './ErrorBoundary';
 
 const NAV = [
   { to: '/', label: 'Library', end: true },
@@ -13,6 +14,7 @@ const NAV = [
 export default function Layout() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [query, setQuery] = useState('');
 
   function onSearch(event: FormEvent) {
@@ -57,7 +59,10 @@ export default function Layout() {
         </div>
       </header>
       <main className="content" id="main" tabIndex={-1}>
-        <Outlet />
+        {/* Keyed by path so moving to another page clears a crash. */}
+        <ErrorBoundary key={location.pathname}>
+          <Outlet />
+        </ErrorBoundary>
       </main>
     </div>
   );
