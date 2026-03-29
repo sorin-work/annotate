@@ -37,7 +37,17 @@ async function send(
   if (token) headers.Authorization = `Bearer ${token}`;
   if (json) headers['Content-Type'] = 'application/json';
 
-  const res = await fetch(`/api${path}`, { method, headers, body });
+  let res: Response;
+  try {
+    res = await fetch(`/api${path}`, { method, headers, body });
+  } catch {
+    // fetch only rejects when the request never got an answer.
+    throw new ApiError(
+      0,
+      'Could not reach the server. Check your connection and try again.',
+      'network_error',
+    );
+  }
   if (!res.ok) {
     const data = await res.json().catch(() => null);
     const error = data?.error;

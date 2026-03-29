@@ -29,6 +29,19 @@ describe('api client', () => {
     });
   });
 
+  it('explains network failures', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('Failed to fetch');
+      }),
+    );
+    const error = await api.get('/documents').catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ status: 0, code: 'network_error' });
+    expect((error as ApiError).message).toMatch(/could not reach the server/i);
+  });
+
   it('turns error responses into ApiError', async () => {
     stubFetch(
       new Response(
