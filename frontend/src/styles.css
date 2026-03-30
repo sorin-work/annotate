@@ -260,6 +260,14 @@ main:focus {
   margin: 2rem auto;
 }
 
+.error-details {
+  margin-top: 1rem;
+  max-height: 16rem;
+  overflow: auto;
+  font-size: 0.75rem;
+  white-space: pre-wrap;
+}
+
 .skip-link {
   position: absolute;
   top: -100px;

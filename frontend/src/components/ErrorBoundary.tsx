@@ -32,6 +32,9 @@ export default class ErrorBoundary extends Component<Props, State> {
         <button type="button" className="button primary" onClick={() => window.location.reload()}>
           Reload the page
         </button>
+        {import.meta.env.DEV && (
+          <pre className="error-details">{this.state.error.stack ?? this.state.error.message}</pre>
+        )}
       </div>
     );
   }
