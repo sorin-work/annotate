@@ -4,10 +4,12 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import App from './App';
 import { AuthProvider } from './auth/AuthContext';
+import { followSystemTheme } from './lib/theme';
 import { createQueryClient } from './queryClient';
 import './styles.css';
 
 const queryClient = createQueryClient();
+followSystemTheme();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
