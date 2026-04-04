@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { followSystemTheme } from './theme';
+import { followSystemTheme, getThemePreference, setThemePreference } from './theme';
 
 function mockSystem(dark: boolean) {
   const listeners: (() => void)[] = [];
@@ -36,5 +36,27 @@ describe('followSystemTheme', () => {
     vi.stubGlobal('matchMedia', undefined);
     followSystemTheme();
     expect(document.documentElement.dataset.theme).toBe('light');
+  });
+});
+
+describe('theme preference', () => {
+  it('overrides the system theme until set back to system', () => {
+    const system = mockSystem(false);
+    setThemePreference('dark');
+    expect(getThemePreference()).toBe('dark');
+    expect(document.documentElement.dataset.theme).toBe('dark');
+
+    // A fixed choice ignores later system changes.
+    system.change(false);
+    expect(document.documentElement.dataset.theme).toBe('dark');
+
+    setThemePreference('system');
+    expect(localStorage.getItem('annotate.theme')).toBeNull();
+    expect(document.documentElement.dataset.theme).toBe('light');
+  });
+
+  it('ignores unknown stored values', () => {
+    localStorage.setItem('annotate.theme', 'sepia');
+    expect(getThemePreference()).toBe('system');
   });
 });

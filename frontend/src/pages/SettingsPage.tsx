@@ -6,6 +6,14 @@ import { useAuth } from '../auth/AuthContext';
 import ErrorMessage from '../components/ErrorMessage';
 import PageHeader from '../components/PageHeader';
 import { formatDate } from '../lib/format';
+import { getThemePreference, setThemePreference } from '../lib/theme';
+import type { ThemePreference } from '../lib/theme';
+
+const THEMES: { value: ThemePreference; label: string }[] = [
+  { value: 'system', label: 'Same as the system' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+];
 
 export default function SettingsPage() {
   const { user, setUser } = useAuth();
@@ -13,6 +21,7 @@ export default function SettingsPage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [passwordChanged, setPasswordChanged] = useState(false);
+  const [theme, setTheme] = useState(getThemePreference);
 
   const saveProfile = useMutation({
     mutationFn: () => authApi.updateProfile(displayName.trim()),
@@ -97,6 +106,28 @@ export default function SettingsPage() {
             </button>
           </div>
         </form>
+
+        <section className="panel form" aria-labelledby="appearance-heading">
+          <h2 id="appearance-heading">Appearance</h2>
+          <fieldset className="field radio-group">
+            <legend>Theme</legend>
+            {THEMES.map((option) => (
+              <label key={option.value}>
+                <input
+                  type="radio"
+                  name="theme"
+                  checked={theme === option.value}
+                  onChange={() => {
+                    setTheme(option.value);
+                    setThemePreference(option.value);
+                  }}
+                />
+                {option.label}
+              </label>
+            ))}
+          </fieldset>
+          <p className="muted small">Saved in this browser.</p>
+        </section>
       </div>
     </>
   );
