@@ -20,7 +20,7 @@ export default function SelectionToolbar({ selection, busy, onHighlight, onCance
       aria-label="Highlight selection"
     >
       <span className="small">{busy ? 'Saving…' : 'Highlight'}</span>
-      <ColorPicker size="small" onChange={(color) => !busy && onHighlight(color)} />
+      <ColorPicker size="small" numbered onChange={(color) => !busy && onHighlight(color)} />
       <button type="button" className="icon-button" aria-label="Cancel" onClick={onCancel}>
         ×
       </button>

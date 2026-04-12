@@ -6,6 +6,7 @@ import { exportsApi } from '../api/exports';
 import { highlightsApi } from '../api/highlights';
 import type { HighlightChanges } from '../api/highlights';
 import { tagsApi } from '../api/tags';
+import { COLORS } from '../api/types';
 import type { Color, Highlight } from '../api/types';
 import AddToCollection from '../components/AddToCollection';
 import DocumentDetailsForm from '../components/DocumentDetailsForm';
@@ -19,6 +20,7 @@ import type { SelectionInfo } from '../components/Reader';
 import SelectionToolbar from '../components/SelectionToolbar';
 import { formatDate, plural, readingTime } from '../lib/format';
 import { scrollBehavior } from '../lib/motion';
+import { useShortcuts } from '../lib/shortcuts';
 
 export default function DocumentPage() {
   const id = Number(useParams().id);
@@ -122,6 +124,32 @@ export default function DocumentPage() {
     setActiveId(highlightId);
     document.getElementById(`highlight-${highlightId}`)?.scrollIntoView?.({ block: 'nearest' });
   }, []);
+
+  // 1-5 highlight the current selection in that colour; Escape lets go of it.
+  const colorShortcuts = Object.fromEntries(
+    COLORS.map((color, index) => [
+      String(index + 1),
+      () => {
+        if (selection && !create.isPending) {
+          create.mutate({ start: selection.start, end: selection.end, color });
+        }
+      },
+    ]),
+  );
+  useShortcuts(
+    {
+      ...colorShortcuts,
+      Escape: () => {
+        if (selection) {
+          setSelection(null);
+          window.getSelection()?.removeAllRanges();
+        } else {
+          setActiveId(null);
+        }
+      },
+    },
+    !editing && !organising,
+  );
 
   if (documentQuery.error) {
     return (
