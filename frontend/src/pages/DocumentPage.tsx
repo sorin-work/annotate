@@ -34,6 +34,7 @@ export default function DocumentPage() {
   );
   const [editing, setEditing] = useState(false);
   const [organising, setOrganising] = useState(false);
+  const [focusNote, setFocusNote] = useState(true);
 
   const documentQuery = useQuery({
     queryKey: ['document', id],
@@ -121,6 +122,7 @@ export default function DocumentPage() {
   const onSelect = useCallback((info: SelectionInfo | null) => setSelection(info), []);
   const onHighlightClick = useCallback((highlightId: number) => {
     setSelection(null);
+    setFocusNote(true);
     setActiveId(highlightId);
     document.getElementById(`highlight-${highlightId}`)?.scrollIntoView?.({ block: 'nearest' });
   }, []);
@@ -136,9 +138,28 @@ export default function DocumentPage() {
       },
     ]),
   );
+  // j and k step through highlights in reading order without grabbing focus.
+  function step(delta: number) {
+    if (highlights.length === 0) return;
+    const index = highlights.findIndex((h) => h.id === activeId);
+    const next =
+      index === -1
+        ? delta > 0
+          ? 0
+          : highlights.length - 1
+        : Math.min(highlights.length - 1, Math.max(0, index + delta));
+    const target = highlights[next]!;
+    setSelection(null);
+    setFocusNote(false);
+    setActiveId(target.id);
+    document.getElementById(`highlight-${target.id}`)?.scrollIntoView?.({ block: 'nearest' });
+  }
+
   useShortcuts(
     {
       ...colorShortcuts,
+      j: () => step(1),
+      k: () => step(-1),
       Escape: () => {
         if (selection) {
           setSelection(null);
@@ -251,8 +272,12 @@ export default function DocumentPage() {
                 key={`${h.id}-${activeId === h.id}`}
                 highlight={h}
                 active={activeId === h.id}
+                autoFocus={focusNote}
                 tagSuggestions={tags.map((t) => t.name)}
-                onActivate={() => setActiveId(h.id)}
+                onActivate={() => {
+                  setFocusNote(true);
+                  setActiveId(h.id);
+                }}
                 onSave={(changes) => update.mutateAsync({ highlightId: h.id, changes })}
                 onDelete={() => remove.mutate(h.id)}
               />

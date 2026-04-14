@@ -12,6 +12,8 @@ interface Props {
   onActivate: () => void;
   onSave: (changes: HighlightChanges) => Promise<unknown>;
   onDelete: () => void;
+  /** Focus the note field when the editor opens (off when stepping through with j/k). */
+  autoFocus?: boolean;
 }
 
 /** A highlight in the document sidebar: compact by default, editable when active. */
@@ -22,6 +24,7 @@ export default function HighlightEditor({
   onActivate,
   onSave,
   onDelete,
+  autoFocus = true,
 }: Props) {
   const [note, setNote] = useState(highlight.note ?? '');
   const [saving, setSaving] = useState(false);
@@ -72,7 +75,7 @@ export default function HighlightEditor({
           rows={4}
           placeholder="Why does this matter?"
           onChange={(e) => setNote(e.target.value)}
-          autoFocus
+          autoFocus={autoFocus}
         />
       </label>
       <TagInput
