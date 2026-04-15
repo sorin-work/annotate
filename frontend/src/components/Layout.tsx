@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
+import { useShortcuts } from '../lib/shortcuts';
 import ErrorBoundary from './ErrorBoundary';
 
 const NAV = [
@@ -16,6 +17,9 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [query, setQuery] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useShortcuts({ '/': () => searchRef.current?.focus() });
 
   function onSearch(event: FormEvent) {
     event.preventDefault();
@@ -42,8 +46,10 @@ export default function Layout() {
         </nav>
         <form className="topsearch" role="search" onSubmit={onSearch}>
           <input
+            ref={searchRef}
             type="search"
             placeholder="Search notes and documents"
+            aria-keyshortcuts="/"
             aria-label="Search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
