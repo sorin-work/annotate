@@ -4,6 +4,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { useShortcuts } from '../lib/shortcuts';
 import ErrorBoundary from './ErrorBoundary';
+import ShortcutsHelp from './ShortcutsHelp';
 
 const NAV = [
   { to: '/', label: 'Library', end: true },
@@ -19,7 +20,15 @@ export default function Layout() {
   const [query, setQuery] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
 
-  useShortcuts({ '/': () => searchRef.current?.focus() });
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  useShortcuts(
+    {
+      '/': () => searchRef.current?.focus(),
+      '?': () => setShowShortcuts(true),
+    },
+    !showShortcuts,
+  );
 
   function onSearch(event: FormEvent) {
     event.preventDefault();
@@ -70,6 +79,7 @@ export default function Layout() {
           <Outlet />
         </ErrorBoundary>
       </main>
+      {showShortcuts && <ShortcutsHelp onClose={() => setShowShortcuts(false)} />}
     </div>
   );
 }

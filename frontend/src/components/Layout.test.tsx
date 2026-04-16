@@ -16,4 +16,15 @@ describe('Layout', () => {
     await userEvent.keyboard('/');
     expect(screen.getByRole('searchbox', { name: 'Search' })).toHaveFocus();
   });
+
+  it('lists the shortcuts on ?', async () => {
+    mockApi({ 'GET /auth/me': user });
+    renderApp(<Layout />);
+    await screen.findByText('Reader');
+    await userEvent.keyboard('?');
+    const dialog = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
+    expect(dialog).toHaveTextContent('Next / previous highlight');
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
 });
