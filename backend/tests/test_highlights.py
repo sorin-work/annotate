@@ -112,7 +112,7 @@ def test_list_all_highlights_with_filters(client, auth, document):
     assert everything["total"] == 3
     assert everything["items"][0]["document_title"] == "Sample"
 
-    tagged = client.get("/api/highlights?tag=animals", headers=auth).json()
+    tagged = client.get("/api/highlights?tag=Animals", headers=auth).json()
     assert {h["quote"] for h in tagged["items"]} == {"quick brown", "lazy dog"}
 
     blue = client.get("/api/highlights?color=blue", headers=auth).json()

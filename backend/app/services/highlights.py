@@ -9,7 +9,7 @@ from app.schemas.highlights import (
     HighlightUpdate,
     HighlightWithDocument,
 )
-from app.services.tags import get_or_create_tags
+from app.services.tags import get_or_create_tags, normalise_tag
 from app.services.text import LIKE_ESCAPE, like_pattern
 
 
@@ -100,7 +100,7 @@ def filtered_query(
             )
         )
     if tag:
-        query = query.where(Highlight.tags.any(Tag.name == tag))
+        query = query.where(Highlight.tags.any(Tag.name == normalise_tag(tag)))
     if color:
         query = query.where(Highlight.color == color)
     if document_id is not None:
