@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tokenStore } from '../api/client';
@@ -26,5 +26,18 @@ describe('Layout', () => {
     expect(dialog).toHaveTextContent('Next / previous highlight');
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('has a skip link to the main content and the main navigation', async () => {
+    mockApi({ 'GET /auth/me': user });
+    renderApp(<Layout />);
+    await screen.findByText('Reader');
+    expect(screen.getByRole('link', { name: 'Skip to content' })).toHaveAttribute('href', '#main');
+    expect(screen.getByRole('main')).toHaveAttribute('id', 'main');
+    const nav = screen.getByRole('navigation', { name: 'Main' });
+    expect(within(nav).getByRole('link', { name: 'Highlights' })).toHaveAttribute(
+      'href',
+      '/highlights',
+    );
   });
 });
