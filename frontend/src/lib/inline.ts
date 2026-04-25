@@ -1,4 +1,4 @@
-import type { Range } from './segments';
+import type { Range, Segment } from './segments';
 
 export type InlineStyle = 'strong' | 'em' | 'code';
 
@@ -70,4 +70,45 @@ export function parseInline(content: string, start: number, end: number): Inline
     i++;
   }
   return { hidden, spans };
+}
+
+export interface Piece extends Segment {
+  style?: InlineStyle;
+  /** Index into `layout.spans`, so neighbouring pieces of one span can share a wrapper. */
+  span?: number;
+}
+
+/**
+ * Cuts highlight segments further at inline Markdown boundaries and drops the
+ * hidden markers, keeping every piece's offsets into the document.
+ */
+export function layoutPieces(segments: Segment[], layout: InlineLayout): Piece[] {
+  const cuts = new Set<number>();
+  for (const r of [...layout.hidden, ...layout.spans]) {
+    cuts.add(r.start);
+    cuts.add(r.end);
+  }
+  const sortedCuts = [...cuts].sort((a, b) => a - b);
+
+  const pieces: Piece[] = [];
+  for (const segment of segments) {
+    const points = [
+      segment.start,
+      ...sortedCuts.filter((p) => p > segment.start && p < segment.end),
+      segment.end,
+    ];
+    for (let i = 0; i < points.length - 1; i++) {
+      const start = points[i]!;
+      const end = points[i + 1]!;
+      if (layout.hidden.some((h) => h.start <= start && h.end >= end)) continue;
+      const span = layout.spans.findIndex((s) => s.start <= start && s.end >= end);
+      pieces.push({
+        start,
+        end,
+        highlightIds: segment.highlightIds,
+        ...(span === -1 ? {} : { style: layout.spans[span]!.style, span }),
+      });
+    }
+  }
+  return pieces;
 }

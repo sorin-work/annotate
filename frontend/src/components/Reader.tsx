@@ -1,8 +1,10 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
-import type { MouseEvent } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import type { Highlight, SourceType } from '../api/types';
 import { toBlocks } from '../lib/blocks';
 import type { Block } from '../lib/blocks';
+import { layoutPieces, parseInline } from '../lib/inline';
+import type { Piece } from '../lib/inline';
 import { segmentRange } from '../lib/segments';
 import type { Range } from '../lib/segments';
 import { selectionToRange } from '../lib/selection';
@@ -77,32 +79,54 @@ function Reader({ content, sourceType, highlights, activeId, onSelect, onHighlig
     }
   }
 
-  function renderBlock(block: Block) {
-    const pieces = segmentRange(block.textStart, block.end, ranges).map((segment) => {
-      const text = content.slice(segment.start, segment.end);
-      // The most recently created highlight wins when several overlap.
-      const topId = segment.highlightIds[segment.highlightIds.length - 1];
-      const top = topId !== undefined ? byId.get(topId) : undefined;
-      if (!top) {
-        return (
-          <span key={segment.start} data-offset={segment.start}>
-            {text}
-          </span>
-        );
-      }
-      const active = segment.highlightIds.includes(activeId ?? -1);
+  function renderPiece(piece: Piece) {
+    const text = content.slice(piece.start, piece.end);
+    // The most recently created highlight wins when several overlap.
+    const topId = piece.highlightIds[piece.highlightIds.length - 1];
+    const top = topId !== undefined ? byId.get(topId) : undefined;
+    if (!top) {
       return (
-        <mark
-          key={segment.start}
-          data-offset={segment.start}
-          data-highlight-id={top.id}
-          className={`hl hl-${top.color}${active ? ' hl-active' : ''}`}
-          title={top.note ?? undefined}
-        >
+        <span key={piece.start} data-offset={piece.start}>
           {text}
-        </mark>
+        </span>
       );
-    });
+    }
+    const active = piece.highlightIds.includes(activeId ?? -1);
+    return (
+      <mark
+        key={piece.start}
+        data-offset={piece.start}
+        data-highlight-id={top.id}
+        className={`hl hl-${top.color}${active ? ' hl-active' : ''}`}
+        title={top.note ?? undefined}
+      >
+        {text}
+      </mark>
+    );
+  }
+
+  function renderBlock(block: Block) {
+    const segments = segmentRange(block.textStart, block.end, ranges);
+    const inline =
+      sourceType === 'markdown' && block.kind !== 'code'
+        ? layoutPieces(segments, parseInline(content, block.textStart, block.end))
+        : segments;
+
+    // Neighbouring pieces of one bold/italic/code span share a wrapper element.
+    const pieces: ReactNode[] = [];
+    for (let i = 0; i < inline.length;) {
+      const piece: Piece = inline[i]!;
+      if (piece.span === undefined) {
+        pieces.push(renderPiece(piece));
+        i++;
+        continue;
+      }
+      const group: Piece[] = [];
+      while (i < inline.length && (inline[i] as Piece).span === piece.span)
+        group.push(inline[i++]!);
+      const Wrapper = piece.style!;
+      pieces.push(<Wrapper key={`s${piece.start}`}>{group.map(renderPiece)}</Wrapper>);
+    }
 
     const key = block.start;
     switch (block.kind) {

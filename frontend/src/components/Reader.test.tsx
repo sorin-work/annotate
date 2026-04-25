@@ -59,6 +59,29 @@ describe('Reader', () => {
     expect(onHighlightClick).toHaveBeenCalledWith(7);
   });
 
+  it('renders inline markdown and keeps it highlightable', () => {
+    const content = 'Some **bold words** and `code`.';
+    const start = content.indexOf('bold');
+    render(
+      <Reader
+        content={content}
+        sourceType="markdown"
+        highlights={[
+          { ...makeHighlight(3, 'x'), start_offset: start, end_offset: start + 4, quote: 'bold' },
+        ]}
+        onSelect={() => {}}
+        onHighlightClick={() => {}}
+      />,
+    );
+    const reader = screen.getByTestId('reader');
+    expect(reader).toHaveTextContent('Some bold words and code.');
+    expect(reader.querySelector('strong')).toHaveTextContent('bold words');
+    expect(reader.querySelector('code')).toHaveTextContent('code');
+    const mark = screen.getByText('bold');
+    expect(mark.tagName).toBe('MARK');
+    expect(mark).toHaveAttribute('data-offset', String(start));
+  });
+
   it('renders plain text as-is', () => {
     render(
       <Reader

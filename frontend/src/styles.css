@@ -887,6 +887,14 @@ textarea {
   overflow-x: auto;
 }
 
+.reader code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+  padding: 0.05em 0.3em;
+  border-radius: 4px;
+  background: var(--chip-bg);
+}
+
 .hl {
   border-radius: 2px;
   cursor: pointer;

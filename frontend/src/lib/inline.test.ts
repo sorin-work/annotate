@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseInline } from './inline';
+import { layoutPieces, parseInline } from './inline';
 
 function styled(text: string) {
   const { hidden, spans } = parseInline(text, 0, text.length);
@@ -40,5 +40,29 @@ describe('parseInline', () => {
     const text = '*a* *b*';
     const { spans } = parseInline(text, 4, text.length);
     expect(spans).toEqual([{ start: 5, end: 6, style: 'em' }]);
+  });
+});
+
+describe('layoutPieces', () => {
+  it('drops markers and keeps highlight segments', () => {
+    const text = 'a **bold** b';
+    const layout = parseInline(text, 0, text.length);
+    // One highlight over "bol".
+    const segments = [
+      { start: 0, end: 4, highlightIds: [] },
+      { start: 4, end: 7, highlightIds: [1] },
+      { start: 7, end: 12, highlightIds: [] },
+    ];
+    const pieces = layoutPieces(segments, layout).map((p) => [
+      text.slice(p.start, p.end),
+      p.highlightIds.length > 0,
+      p.style ?? null,
+    ]);
+    expect(pieces).toEqual([
+      ['a ', false, null],
+      ['bol', true, 'strong'],
+      ['d', false, 'strong'],
+      [' b', false, null],
+    ]);
   });
 });
