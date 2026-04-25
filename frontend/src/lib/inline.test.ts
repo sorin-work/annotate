@@ -32,6 +32,16 @@ describe('parseInline', () => {
     expect(styled('*one\ntwo*').spans).toEqual([['em', 'one\ntwo']]);
   });
 
+  it('finds links with safe urls only', () => {
+    const text = 'see [the docs](https://example.com/a) or [this](javascript:alert(1))';
+    const { hidden, spans } = parseInline(text, 0, text.length);
+    expect(spans).toEqual([{ start: 5, end: 13, style: 'link', href: 'https://example.com/a' }]);
+    expect(hidden.map((r) => text.slice(r.start, r.end))).toEqual([
+      '[',
+      '](https://example.com/a)',
+    ]);
+  });
+
   it('keeps markers inside code as text', () => {
     expect(styled('`**not bold**`').spans).toEqual([['code', '**not bold**']]);
   });

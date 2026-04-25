@@ -82,6 +82,22 @@ describe('Reader', () => {
     expect(mark).toHaveAttribute('data-offset', String(start));
   });
 
+  it('renders markdown links that open in a new tab', () => {
+    render(
+      <Reader
+        content="Read [the essay](https://example.com/essay) first."
+        sourceType="markdown"
+        highlights={[]}
+        onSelect={() => {}}
+        onHighlightClick={() => {}}
+      />,
+    );
+    const link = screen.getByRole('link', { name: 'the essay' });
+    expect(link).toHaveAttribute('href', 'https://example.com/essay');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(screen.getByTestId('reader')).toHaveTextContent('Read the essay first.');
+  });
+
   it('renders plain text as-is', () => {
     render(
       <Reader

@@ -1,10 +1,11 @@
 import type { Range, Segment } from './segments';
 
-export type InlineStyle = 'strong' | 'em' | 'code';
+export type InlineStyle = 'strong' | 'em' | 'code' | 'link';
 
 /** Visible text styled by inline Markdown, as offsets into the document. */
 export interface InlineSpan extends Range {
   style: InlineStyle;
+  href?: string;
 }
 
 export interface InlineLayout {
@@ -14,13 +15,15 @@ export interface InlineLayout {
 }
 
 const WORD = /[\p{L}\p{N}]/u;
+// Anything else (javascript:, data:) stays plain text.
+const SAFE_URL = /^(https?:\/\/|mailto:)/i;
 
 function isWordChar(char: string | undefined): boolean {
   return char !== undefined && WORD.test(char);
 }
 
 /**
- * Finds `**bold**`, `*italic*`, `_italic_` and `` `code` `` between `start`
+ * Finds `**bold**`, `*italic*`, `_italic_`, `` `code` `` and `[links](https://…)` between `start`
  * and `end`. Emphasis must hug its text (`* not this *`), underscores inside
  * words (`snake_case`) are left alone and nothing spans a blank line.
  */
@@ -44,6 +47,18 @@ export function parseInline(content: string, start: number, end: number): Inline
         hidden.push({ start: i, end: i + 1 }, { start: close, end: close + 1 });
         spans.push({ start: i + 1, end: close, style: 'code' });
         i = close + 1;
+        continue;
+      }
+    }
+
+    if (char === '[') {
+      const close = closing('](', i + 1);
+      const paren = close === -1 ? -1 : closing(')', close + 2);
+      const href = paren === -1 ? '' : content.slice(close + 2, paren).trim();
+      if (close > i + 1 && SAFE_URL.test(href)) {
+        hidden.push({ start: i, end: i + 1 }, { start: close, end: paren + 1 });
+        spans.push({ start: i + 1, end: close, style: 'link', href });
+        i = paren + 1;
         continue;
       }
     }
@@ -74,6 +89,7 @@ export function parseInline(content: string, start: number, end: number): Inline
 
 export interface Piece extends Segment {
   style?: InlineStyle;
+  href?: string;
   /** Index into `layout.spans`, so neighbouring pieces of one span can share a wrapper. */
   span?: number;
 }
@@ -106,7 +122,9 @@ export function layoutPieces(segments: Segment[], layout: InlineLayout): Piece[]
         start,
         end,
         highlightIds: segment.highlightIds,
-        ...(span === -1 ? {} : { style: layout.spans[span]!.style, span }),
+        ...(span === -1
+          ? {}
+          : { style: layout.spans[span]!.style, href: layout.spans[span]!.href, span }),
       });
     }
   }

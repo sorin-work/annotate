@@ -124,8 +124,17 @@ function Reader({ content, sourceType, highlights, activeId, onSelect, onHighlig
       const group: Piece[] = [];
       while (i < inline.length && (inline[i] as Piece).span === piece.span)
         group.push(inline[i++]!);
-      const Wrapper = piece.style!;
-      pieces.push(<Wrapper key={`s${piece.start}`}>{group.map(renderPiece)}</Wrapper>);
+      const key = `s${piece.start}`;
+      if (piece.style === 'link') {
+        pieces.push(
+          <a key={key} href={piece.href} target="_blank" rel="noreferrer noopener">
+            {group.map(renderPiece)}
+          </a>,
+        );
+      } else {
+        const Wrapper = piece.style!;
+        pieces.push(<Wrapper key={key}>{group.map(renderPiece)}</Wrapper>);
+      }
     }
 
     const key = block.start;
