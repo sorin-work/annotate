@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tokenStore } from '../api/client';
@@ -94,5 +94,62 @@ describe('DocumentPage', () => {
     renderApp(<DocumentPage />, { route: '/documents/404', path: '/documents/:id' });
     expect(await screen.findByRole('alert')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Back to the library' })).toBeInTheDocument();
+  });
+
+  it('highlights the selection in a colour with the number keys', async () => {
+    const created = { ...highlight, id: 12, start_offset: 39, end_offset: 49, color: 'blue' };
+    const { calls } = mockApi({
+      'GET /auth/me': user,
+      'GET /documents/5': doc,
+      'GET /documents/5/highlights': [],
+      'GET /tags': [],
+      'POST /documents/5/highlights': created,
+    });
+    renderApp(<DocumentPage />, { route: '/documents/5', path: '/documents/:id' });
+
+    const text = (await screen.findByText(/^Simplicity/)).firstChild!;
+    const range = document.createRange();
+    range.setStart(text, 0);
+    range.setEnd(text, 10);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(range);
+    fireEvent.mouseUp(screen.getByTestId('reader'));
+    expect(await screen.findByRole('toolbar', { name: 'Highlight selection' })).toBeInTheDocument();
+
+    await userEvent.keyboard('3');
+    await waitFor(() =>
+      expect(calls.find((c) => c.method === 'POST')?.body).toEqual({
+        start_offset: 39,
+        end_offset: 49,
+        color: 'blue',
+      }),
+    );
+  });
+
+  it('steps through highlights with j and k without focusing the note', async () => {
+    const second = { ...highlight, id: 12, start_offset: 39, end_offset: 49, quote: 'Simplicity' };
+    mockApi({
+      'GET /auth/me': user,
+      'GET /documents/5': doc,
+      'GET /documents/5/highlights': [highlight, second],
+      'GET /tags': [],
+    });
+    renderApp(<DocumentPage />, { route: '/documents/5', path: '/documents/:id' });
+    const sidebar = await screen.findByRole('complementary', { name: 'Highlights' });
+    await within(sidebar).findByText('2 highlights');
+
+    await userEvent.keyboard('j');
+    const note = within(sidebar).getByPlaceholderText('Why does this matter?');
+    expect(note).toHaveValue('Notifications, these days.');
+    expect(note).not.toHaveFocus();
+
+    await userEvent.keyboard('j');
+    expect(within(sidebar).getByPlaceholderText('Why does this matter?')).toHaveValue(
+      'Notifications, these days.',
+    );
+    expect(document.getElementById('highlight-12')).toHaveClass('active');
+
+    await userEvent.keyboard('{Escape}');
+    expect(within(sidebar).queryByPlaceholderText('Why does this matter?')).not.toBeInTheDocument();
   });
 });
