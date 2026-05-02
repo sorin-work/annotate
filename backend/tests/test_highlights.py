@@ -127,3 +127,22 @@ def test_list_all_highlights_with_filters(client, auth, document):
     paged = client.get("/api/highlights?limit=1&offset=1", headers=auth).json()
     assert paged["total"] == 3
     assert len(paged["items"]) == 1
+
+
+def test_sort_highlights(client, auth, document):
+    other = client.post(
+        "/api/documents", json={"title": "Another", "content": "Later words here."}, headers=auth
+    ).json()
+    highlight(client, auth, document, "lazy dog")
+    highlight(client, auth, other, "Later words")
+    highlight(client, auth, document, "quick brown")
+
+    def quotes(sort: str) -> list[str]:
+        response = client.get(f"/api/highlights?sort={sort}", headers=auth)
+        assert response.status_code == 200, response.text
+        return [h["quote"] for h in response.json()["items"]]
+
+    assert quotes("newest") == ["quick brown", "Later words", "lazy dog"]
+    assert quotes("oldest") == ["lazy dog", "Later words", "quick brown"]
+    assert quotes("document") == ["Later words", "quick brown", "lazy dog"]
+    assert client.get("/api/highlights?sort=random", headers=auth).status_code == 422

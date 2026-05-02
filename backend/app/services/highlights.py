@@ -1,4 +1,4 @@
-from sqlalchemy import Select, or_, select
+from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.errors import AppError, NotFoundError
@@ -11,6 +11,18 @@ from app.schemas.highlights import (
 )
 from app.services.tags import get_or_create_tags, normalise_tag
 from app.services.text import LIKE_ESCAPE, like_pattern
+
+SORTS = {
+    "newest": (Highlight.created_at.desc(), Highlight.id.desc()),
+    "oldest": (Highlight.created_at.asc(), Highlight.id.asc()),
+    # Reading order: by document, then position in the text.
+    "document": (
+        func.lower(Document.title).asc(),
+        Highlight.document_id.asc(),
+        Highlight.start_offset.asc(),
+        Highlight.id.asc(),
+    ),
+}
 
 
 def create_highlight(

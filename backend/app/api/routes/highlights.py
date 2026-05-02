@@ -1,10 +1,9 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Query, Response, status
 from sqlalchemy import func, select
 
 from app.deps import CurrentUser, DbSession
-from app.models import Highlight
 from app.schemas.common import Page
 from app.schemas.highlights import (
     Color,
@@ -44,6 +43,7 @@ def list_highlights(
     color: Color | None = None,
     document_id: int | None = None,
     collection_id: int | None = None,
+    sort: Literal["newest", "oldest", "document"] = "newest",
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> Page[HighlightWithDocument]:
@@ -51,9 +51,7 @@ def list_highlights(
         user, q=q, tag=tag, color=color, document_id=document_id, collection_id=collection_id
     )
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
-    rows = db.scalars(
-        query.order_by(Highlight.created_at.desc(), Highlight.id.desc()).limit(limit).offset(offset)
-    )
+    rows = db.scalars(query.order_by(*service.SORTS[sort]).limit(limit).offset(offset))
     return Page(items=[service.to_out_with_document(h) for h in rows], total=total)
 
 
