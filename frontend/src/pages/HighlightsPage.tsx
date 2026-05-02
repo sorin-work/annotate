@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router';
 import { collectionsApi } from '../api/collections';
 import { exportsApi } from '../api/exports';
 import { highlightsApi } from '../api/highlights';
+import type { HighlightSort } from '../api/highlights';
 import { tagsApi } from '../api/tags';
 import { COLORS } from '../api/types';
 import type { Color } from '../api/types';
@@ -14,12 +15,19 @@ import PageHeader from '../components/PageHeader';
 import { plural } from '../lib/format';
 
 const PAGE_SIZE = 30;
+const SORTS: { value: HighlightSort; label: string }[] = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'document', label: 'By document' },
+];
 
 export default function HighlightsPage() {
   const [params, setParams] = useSearchParams();
   const tag = params.get('tag');
   const color = params.get('color') as Color | null;
   const collectionId = params.get('collection') ? Number(params.get('collection')) : null;
+  const sortParam = params.get('sort');
+  const sort = SORTS.some((s) => s.value === sortParam) ? (sortParam as HighlightSort) : 'newest';
 
   const { data: tags = [] } = useQuery({ queryKey: ['tags'], queryFn: tagsApi.list });
   const { data: collections = [] } = useQuery({
@@ -28,9 +36,9 @@ export default function HighlightsPage() {
   });
 
   const query = useInfiniteQuery({
-    queryKey: ['highlights-all', { tag, color, collectionId }],
+    queryKey: ['highlights-all', { tag, color, collectionId, sort }],
     queryFn: ({ pageParam }) =>
-      highlightsApi.list({ tag, color, collectionId, limit: PAGE_SIZE, offset: pageParam }),
+      highlightsApi.list({ tag, color, collectionId, sort, limit: PAGE_SIZE, offset: pageParam }),
     initialPageParam: 0,
     getNextPageParam: (last, pages) => {
       const loaded = pages.reduce((sum, p) => sum + p.items.length, 0);
@@ -98,8 +106,23 @@ export default function HighlightsPage() {
             </option>
           ))}
         </select>
+        <select
+          aria-label="Sort"
+          value={sort}
+          onChange={(e) => update('sort', e.target.value === 'newest' ? null : e.target.value)}
+        >
+          {SORTS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
         {filtered && (
-          <button type="button" className="button-link" onClick={() => setParams({})}>
+          <button
+            type="button"
+            className="button-link"
+            onClick={() => setParams(sort === 'newest' ? {} : { sort })}
+          >
             Clear filters
           </button>
         )}

@@ -15,12 +15,15 @@ export interface HighlightChanges {
   tags?: string[];
 }
 
+export type HighlightSort = 'newest' | 'oldest' | 'document';
+
 export interface HighlightFilters {
   q?: string;
   tag?: string | null;
   color?: Color | null;
   documentId?: number | null;
   collectionId?: number | null;
+  sort?: HighlightSort;
   limit?: number;
   offset?: number;
 }
@@ -40,6 +43,7 @@ export const highlightsApi = {
         color: filters.color,
         document_id: filters.documentId,
         collection_id: filters.collectionId,
+        sort: filters.sort,
         limit: filters.limit,
         offset: filters.offset,
       })}`,
