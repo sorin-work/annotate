@@ -7,6 +7,8 @@ from app.deps import CurrentUser, DbSession
 from app.schemas.common import Page
 from app.schemas.highlights import (
     Color,
+    HighlightBulkAction,
+    HighlightBulkResult,
     HighlightCreate,
     HighlightOut,
     HighlightUpdate,
@@ -53,6 +55,13 @@ def list_highlights(
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
     rows = db.scalars(query.order_by(*service.SORTS[sort]).limit(limit).offset(offset))
     return Page(items=[service.to_out_with_document(h) for h in rows], total=total)
+
+
+@router.post("/highlights/bulk")
+def bulk_update_highlights(
+    data: HighlightBulkAction, user: CurrentUser, db: DbSession
+) -> HighlightBulkResult:
+    return service.bulk_update(db, user, data)
 
 
 @router.patch("/highlights/{highlight_id}")

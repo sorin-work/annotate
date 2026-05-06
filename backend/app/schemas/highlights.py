@@ -67,3 +67,32 @@ class HighlightOut(ApiModel):
 
 class HighlightWithDocument(HighlightOut):
     document_title: str
+
+
+class HighlightBulkAction(ApiModel):
+    """The same change applied to many highlights at once."""
+
+    ids: list[int] = Field(min_length=1, max_length=500)
+    delete: bool = False
+    color: Color | None = None
+    add_tags: list[str] = Field(default_factory=list, max_length=20)
+    remove_tags: list[str] = Field(default_factory=list, max_length=20)
+
+    @field_validator("add_tags", "remove_tags")
+    @classmethod
+    def clean_tags(cls, value: list[str]) -> list[str]:
+        return _clean_tags(value) or []
+
+    @model_validator(mode="after")
+    def check_action(self) -> "HighlightBulkAction":
+        changes = self.color is not None or self.add_tags or self.remove_tags
+        if self.delete and changes:
+            raise ValueError("delete cannot be combined with other changes")
+        if not self.delete and not changes:
+            raise ValueError("nothing to do: set delete, color, add_tags or remove_tags")
+        return self
+
+
+class HighlightBulkResult(ApiModel):
+    updated: int = 0
+    deleted: int = 0

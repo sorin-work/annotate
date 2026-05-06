@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session, selectinload
 from app.errors import AppError, NotFoundError
 from app.models import Document, Highlight, Tag, User, collection_documents
 from app.schemas.highlights import (
+    HighlightBulkAction,
+    HighlightBulkResult,
     HighlightCreate,
     HighlightOut,
     HighlightUpdate,
@@ -73,6 +75,38 @@ def update_highlight(
 def delete_highlight(db: Session, highlight: Highlight) -> None:
     db.delete(highlight)
     db.commit()
+
+
+def bulk_update(db: Session, user: User, data: HighlightBulkAction) -> HighlightBulkResult:
+    """Apply one change to several highlights; all of them must belong to ``user``."""
+    ids = list(dict.fromkeys(data.ids))
+    highlights = list(
+        db.scalars(
+            select(Highlight)
+            .where(Highlight.id.in_(ids), Highlight.owner_id == user.id)
+            .options(selectinload(Highlight.tags))
+        )
+    )
+    if len(highlights) != len(ids):
+        raise NotFoundError("Some of these highlights do not exist")
+
+    if data.delete:
+        for highlight in highlights:
+            db.delete(highlight)
+        db.commit()
+        return HighlightBulkResult(deleted=len(highlights))
+
+    added = get_or_create_tags(db, user, data.add_tags)
+    removed = {normalise_tag(name) for name in data.remove_tags}
+    for highlight in highlights:
+        if data.color is not None:
+            highlight.color = data.color
+        tags = [tag for tag in highlight.tags if tag.name not in removed]
+        tags += [tag for tag in added if tag not in tags]
+        if tags != highlight.tags:
+            highlight.tags = tags
+    db.commit()
+    return HighlightBulkResult(updated=len(highlights))
 
 
 def list_for_document(db: Session, document: Document) -> list[Highlight]:
