@@ -1,12 +1,14 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { collectionsApi } from '../api/collections';
 import { exportsApi } from '../api/exports';
 import { highlightsApi } from '../api/highlights';
-import type { HighlightSort } from '../api/highlights';
+import type { BulkAction, HighlightSort } from '../api/highlights';
 import { tagsApi } from '../api/tags';
 import { COLORS } from '../api/types';
 import type { Color } from '../api/types';
+import BulkActions from '../components/BulkActions';
 import EmptyState from '../components/EmptyState';
 import ErrorMessage from '../components/ErrorMessage';
 import ExportButtons from '../components/ExportButtons';
@@ -45,6 +47,27 @@ export default function HighlightsPage() {
       return loaded < last.total ? loaded : undefined;
     },
   });
+
+  const queryClient = useQueryClient();
+  const [selected, setSelected] = useState<Set<number>>(() => new Set());
+  const bulk = useMutation({
+    mutationFn: (action: BulkAction) => highlightsApi.bulk([...selected], action),
+    onSuccess: (_, action) => {
+      if ('delete' in action) setSelected(new Set());
+      for (const key of ['highlights-all', 'highlights', 'tags', 'documents', 'search']) {
+        queryClient.invalidateQueries({ queryKey: [key] });
+      }
+    },
+  });
+
+  function toggle(id: number) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   function update(key: string, value: string | null) {
     const next = new URLSearchParams(params);
@@ -128,7 +151,17 @@ export default function HighlightsPage() {
         )}
       </div>
 
-      <ErrorMessage error={query.error} />
+      {selected.size > 0 && (
+        <BulkActions
+          count={selected.size}
+          tags={tags}
+          busy={bulk.isPending}
+          onApply={(action) => bulk.mutate(action)}
+          onSelectAll={() => setSelected(new Set(items.map((h) => h.id)))}
+          onClear={() => setSelected(new Set())}
+        />
+      )}
+      <ErrorMessage error={query.error ?? bulk.error} />
       {query.isPending && <p className="muted">Loading…</p>}
       {query.data && items.length === 0 && (
         <EmptyState title={filtered ? 'No highlights match these filters' : 'No highlights yet'}>
@@ -138,7 +171,12 @@ export default function HighlightsPage() {
 
       <div className="highlight-list">
         {items.map((h) => (
-          <HighlightCard key={h.id} highlight={h} />
+          <HighlightCard
+            key={h.id}
+            highlight={h}
+            selected={selected.has(h.id)}
+            onToggleSelected={() => toggle(h.id)}
+          />
         ))}
       </div>
 

@@ -7,12 +7,29 @@ import CopyButton from './CopyButton';
 interface Props {
   highlight: Highlight | HighlightWithDocument;
   showDocument?: boolean;
+  /** When given, the card gets a checkbox for bulk actions. */
+  selected?: boolean;
+  onToggleSelected?: () => void;
 }
 
-export default function HighlightCard({ highlight, showDocument = true }: Props) {
+export default function HighlightCard({
+  highlight,
+  showDocument = true,
+  selected,
+  onToggleSelected,
+}: Props) {
   const documentTitle = 'document_title' in highlight ? highlight.document_title : null;
   return (
-    <article className={`highlight-card border-${highlight.color}`}>
+    <article className={`highlight-card border-${highlight.color}${selected ? ' selected' : ''}`}>
+      {onToggleSelected && (
+        <input
+          type="checkbox"
+          className="highlight-select"
+          aria-label={`Select “${highlight.quote.slice(0, 40)}”`}
+          checked={Boolean(selected)}
+          onChange={onToggleSelected}
+        />
+      )}
       <blockquote>{highlight.quote}</blockquote>
       {highlight.note && <p className="note">{highlight.note}</p>}
       <footer>

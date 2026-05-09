@@ -15,6 +15,9 @@ export interface HighlightChanges {
   tags?: string[];
 }
 
+export type BulkAction =
+  { delete: true } | { color?: Color; add_tags?: string[]; remove_tags?: string[] };
+
 export type HighlightSort = 'newest' | 'oldest' | 'document';
 
 export interface HighlightFilters {
@@ -35,6 +38,8 @@ export const highlightsApi = {
   update: (id: number, changes: HighlightChanges) =>
     api.patch<Highlight>(`/highlights/${id}`, changes),
   remove: (id: number) => api.delete(`/highlights/${id}`),
+  bulk: (ids: number[], action: BulkAction) =>
+    api.post<{ updated: number; deleted: number }>('/highlights/bulk', { ids, ...action }),
   list: (filters: HighlightFilters = {}) =>
     api.get<Page<HighlightWithDocument>>(
       `/highlights${toQuery({
