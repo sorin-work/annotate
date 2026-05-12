@@ -4,6 +4,7 @@ import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { vi } from 'vitest';
 import { AuthProvider } from '../auth/AuthContext';
+import { ToastProvider } from '../components/Toast';
 
 type Handler = (init: RequestInit & { url: string }) => unknown;
 
@@ -48,10 +49,12 @@ export function renderApp(ui: ReactElement, { route = '/', path = '*' } = {}) {
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[route]}>
         <AuthProvider>
-          <Routes>
-            <Route path={path} element={ui} />
-            <Route path="*" element={<div>Other page</div>} />
-          </Routes>
+          <ToastProvider>
+            <Routes>
+              <Route path={path} element={ui} />
+              <Route path="*" element={<div>Other page</div>} />
+            </Routes>
+          </ToastProvider>
         </AuthProvider>
       </MemoryRouter>
     </QueryClientProvider>,
