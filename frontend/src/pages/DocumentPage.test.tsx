@@ -152,4 +152,34 @@ describe('DocumentPage', () => {
     await userEvent.keyboard('{Escape}');
     expect(within(sidebar).queryByPlaceholderText('Why does this matter?')).not.toBeInTheDocument();
   });
+
+  it('can undo deleting a highlight', async () => {
+    const { calls } = mockApi({
+      'GET /auth/me': user,
+      'GET /documents/5': doc,
+      'GET /documents/5/highlights': [highlight],
+      'GET /tags': [],
+      'DELETE /highlights/11': undefined,
+      'POST /documents/5/highlights': { ...highlight, id: 13 },
+    });
+    renderApp(<DocumentPage />, { route: '/documents/5', path: '/documents/:id' });
+    const sidebar = await screen.findByRole('complementary', { name: 'Highlights' });
+    await userEvent.click(await within(sidebar).findByRole('button', { name: /frittered/ }));
+    await userEvent.click(within(sidebar).getByRole('button', { name: 'Delete' }));
+
+    expect(await screen.findByText('Highlight deleted')).toBeInTheDocument();
+    expect(within(sidebar).getByText('0 highlights')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(() =>
+      expect(calls.find((c) => c.method === 'POST')?.body).toEqual({
+        start_offset: 0,
+        end_offset: 37,
+        color: 'yellow',
+        note: 'Notifications, these days.',
+        tags: ['attention'],
+      }),
+    );
+    expect(await within(sidebar).findByText('1 highlight')).toBeInTheDocument();
+  });
 });

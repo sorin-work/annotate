@@ -18,6 +18,7 @@ import Modal from '../components/Modal';
 import Reader from '../components/Reader';
 import type { SelectionInfo } from '../components/Reader';
 import SelectionToolbar from '../components/SelectionToolbar';
+import { useToast } from '../components/Toast';
 import { formatDate, plural, readingTime } from '../lib/format';
 import { scrollBehavior } from '../lib/motion';
 import { useShortcuts } from '../lib/shortcuts';
@@ -27,6 +28,7 @@ export default function DocumentPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   const [selection, setSelection] = useState<SelectionInfo | null>(null);
   const [activeId, setActiveId] = useState<number | null>(() =>
@@ -82,14 +84,34 @@ export default function DocumentPage() {
     },
   });
 
-  const remove = useMutation({
-    mutationFn: (highlightId: number) => highlightsApi.remove(highlightId),
-    onSuccess: (_, highlightId) => {
+  // Undo re-creates the highlight from the copy we still have in memory.
+  const restore = useMutation({
+    mutationFn: (h: Highlight) =>
+      highlightsApi.create(id, {
+        start_offset: h.start_offset,
+        end_offset: h.end_offset,
+        color: h.color,
+        note: h.note,
+        tags: h.tags,
+      }),
+    onSuccess: (created) => {
       queryClient.setQueryData<Highlight[]>(highlightsKey, (old = []) =>
-        old.filter((h) => h.id !== highlightId),
+        [...old, created].sort((a, b) => a.start_offset - b.start_offset || a.id - b.id),
+      );
+      setActiveId(created.id);
+      refreshRelated();
+    },
+  });
+
+  const remove = useMutation({
+    mutationFn: (h: Highlight) => highlightsApi.remove(h.id),
+    onSuccess: (_, deleted) => {
+      queryClient.setQueryData<Highlight[]>(highlightsKey, (old = []) =>
+        old.filter((h) => h.id !== deleted.id),
       );
       setActiveId(null);
       refreshRelated();
+      toast('Highlight deleted', { label: 'Undo', onClick: () => restore.mutate(deleted) });
     },
   });
 
@@ -264,7 +286,7 @@ export default function DocumentPage() {
             Nothing highlighted yet. Select text in the document and pick a colour.
           </p>
         )}
-        <ErrorMessage error={update.error ?? remove.error} />
+        <ErrorMessage error={update.error ?? remove.error ?? restore.error} />
         <ul className="sidebar-list">
           {highlights.map((h) => (
             <li key={h.id}>
@@ -279,7 +301,7 @@ export default function DocumentPage() {
                   setActiveId(h.id);
                 }}
                 onSave={(changes) => update.mutateAsync({ highlightId: h.id, changes })}
-                onDelete={() => remove.mutate(h.id)}
+                onDelete={() => remove.mutate(h)}
               />
             </li>
           ))}
