@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider, useToast } from './Toast';
@@ -42,6 +42,25 @@ describe('toasts', () => {
     );
     act(() => screen.getByRole('button', { name: 'Delete' }).click());
     expect(screen.getByRole('status')).toHaveTextContent('Highlight deleted');
+    act(() => vi.advanceTimersByTime(6000));
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+  });
+
+  it('stays while the pointer is over it', () => {
+    vi.useFakeTimers();
+    render(
+      <ToastProvider>
+        <Trigger onUndo={() => {}} />
+      </ToastProvider>,
+    );
+    act(() => screen.getByRole('button', { name: 'Delete' }).click());
+    const toast = screen.getByText('Highlight deleted').parentElement!;
+
+    fireEvent.mouseEnter(toast);
+    act(() => vi.advanceTimersByTime(10_000));
+    expect(screen.getByRole('status')).toHaveTextContent('Highlight deleted');
+
+    fireEvent.mouseLeave(toast);
     act(() => vi.advanceTimersByTime(6000));
     expect(screen.getByRole('status')).toBeEmptyDOMElement();
   });

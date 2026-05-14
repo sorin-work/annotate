@@ -20,13 +20,22 @@ const DURATION_MS = 6000;
 let nextId = 1;
 
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }) {
+  // Hovering or focusing the toast holds it, so there is time to reach "Undo".
+  const [held, setHeld] = useState(false);
   useEffect(() => {
+    if (held) return;
     const timer = window.setTimeout(onDismiss, DURATION_MS);
     return () => window.clearTimeout(timer);
-  }, [onDismiss]);
+  }, [onDismiss, held]);
 
   return (
-    <div className="toast">
+    <div
+      className="toast"
+      onMouseEnter={() => setHeld(true)}
+      onMouseLeave={() => setHeld(false)}
+      onFocus={() => setHeld(true)}
+      onBlur={() => setHeld(false)}
+    >
       <span>{toast.message}</span>
       {toast.action && (
         <button
