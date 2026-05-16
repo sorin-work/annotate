@@ -69,7 +69,7 @@ def test_update_highlight(client, auth, document):
 
     response = client.patch(url, json={"tags": ["two", "Three"], "note": ""}, headers=auth)
     body = response.json()
-    assert body["tags"] == ["two", "three"]
+    assert body["tags"] == ["three", "two"]
     assert body["note"] is None
 
 

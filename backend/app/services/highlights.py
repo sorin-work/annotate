@@ -171,7 +171,7 @@ def to_out(highlight: Highlight) -> HighlightOut:
         quote=highlight.quote,
         color=highlight.color,
         note=highlight.note,
-        tags=[tag.name for tag in highlight.tags],
+        tags=sorted(tag.name for tag in highlight.tags),
         created_at=highlight.created_at,
         updated_at=highlight.updated_at,
     )
