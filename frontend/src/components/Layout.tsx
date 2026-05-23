@@ -11,6 +11,7 @@ const NAV = [
   { to: '/highlights', label: 'Highlights' },
   { to: '/collections', label: 'Collections' },
   { to: '/tags', label: 'Tags' },
+  { to: '/dashboard', label: 'Dashboard' },
 ];
 
 export default function Layout() {

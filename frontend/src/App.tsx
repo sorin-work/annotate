@@ -3,6 +3,7 @@ import { GuestOnly, RequireAuth } from './auth/guards';
 import Layout from './components/Layout';
 import CollectionPage from './pages/CollectionPage';
 import CollectionsPage from './pages/CollectionsPage';
+import DashboardPage from './pages/DashboardPage';
 import DocumentPage from './pages/DocumentPage';
 import HighlightsPage from './pages/HighlightsPage';
 import LibraryPage from './pages/LibraryPage';
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="collections/:id" element={<CollectionPage />} />
         <Route path="tags" element={<TagsPage />} />
         <Route path="search" element={<SearchPage />} />
+        <Route path="dashboard" element={<DashboardPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

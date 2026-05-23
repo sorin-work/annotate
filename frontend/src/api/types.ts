@@ -82,3 +82,16 @@ export interface SearchResults {
   documents: { id: number; title: string; author: string | null; snippet: string }[];
   highlights: HighlightWithDocument[];
 }
+
+export interface Stats {
+  documents: number;
+  highlights: number;
+  notes: number;
+  tags: number;
+  collections: number;
+  words: number;
+  colors: Record<Color, number>;
+  top_tags: { name: string; count: number }[];
+  weekly: { week_start: string; highlights: number }[];
+  most_highlighted: { id: number; title: string; highlight_count: number }[];
+}
