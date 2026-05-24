@@ -1181,6 +1181,52 @@ kbd {
   gap: 1.25rem;
 }
 
+.dashboard-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.weekly-chart {
+  margin: 0;
+}
+
+.weekly-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 120px;
+  border-bottom: 1px solid var(--border);
+}
+
+.weekly-bar {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.weekly-bar span {
+  display: block;
+  width: min(100%, 28px);
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: var(--accent);
+}
+
+.weekly-bar:hover span {
+  opacity: 0.8;
+}
+
+.weekly-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.3rem;
+}
+
+.weekly-chart figcaption {
+  margin-top: 0.4rem;
+}
+
 .color-bars,
 .ranked-list {
   margin: 0;

@@ -5,6 +5,7 @@ import { COLORS } from '../api/types';
 import EmptyState from '../components/EmptyState';
 import ErrorMessage from '../components/ErrorMessage';
 import PageHeader from '../components/PageHeader';
+import WeeklyChart from '../components/WeeklyChart';
 import { plural } from '../lib/format';
 
 const numberFormat = new Intl.NumberFormat();
@@ -49,6 +50,11 @@ export default function DashboardPage() {
         </EmptyState>
       ) : (
         <div className="dashboard-grid">
+          <section className="panel wide" aria-labelledby="weekly-heading">
+            <h2 id="weekly-heading">Highlights per week</h2>
+            <WeeklyChart weeks={stats.weekly} />
+          </section>
+
           <section className="panel" aria-labelledby="colors-heading">
             <h2 id="colors-heading">Highlights by colour</h2>
             <ul className="color-bars">
