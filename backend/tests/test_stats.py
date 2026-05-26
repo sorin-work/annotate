@@ -1,5 +1,9 @@
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
+from sqlalchemy import update
+
+from app.db import utcnow
+from app.models import Highlight
 from app.services.stats import weekly_counts
 from tests.conftest import highlight
 
@@ -52,3 +56,18 @@ def test_weekly_counts_start_on_monday():
         (date(2026, 5, 11), 1),
         (date(2026, 5, 18), 1),
     ]
+
+
+def test_old_highlights_count_in_totals_but_not_in_the_weekly_chart(client, auth, document, db):
+    old = highlight(client, auth, document, "quick brown")
+    highlight(client, auth, document, "lazy dog")
+    db.execute(
+        update(Highlight)
+        .where(Highlight.id == old["id"])
+        .values(created_at=utcnow() - timedelta(days=200))
+    )
+    db.commit()
+
+    stats = client.get("/api/stats", headers=auth).json()
+    assert stats["highlights"] == 2
+    assert sum(week["highlights"] for week in stats["weekly"]) == 1
