@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.routes import (
+    activity,
     auth,
     collections,
     documents,
@@ -22,3 +23,4 @@ api_router.include_router(collections.router)
 api_router.include_router(search.router)
 api_router.include_router(export.router)
 api_router.include_router(stats.router)
+api_router.include_router(activity.router)
