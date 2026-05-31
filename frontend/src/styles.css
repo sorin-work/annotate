@@ -1271,6 +1271,54 @@ kbd {
   gap: 1rem;
 }
 
+/* Recent activity */
+.activity-day h2 {
+  margin: 1.5rem 0 0.6rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.activity-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.activity-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.activity-text {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.activity-quote {
+  color: var(--text);
+  font-family: Georgia, serif;
+  padding-left: 0.6rem;
+  border-left: 3px solid var(--border);
+}
+
+.activity-note {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}
+
+.activity-list time {
+  white-space: nowrap;
+}
+
 /* Toasts */
 .toasts {
   position: fixed;

@@ -95,3 +95,15 @@ export interface Stats {
   weekly: { week_start: string; highlights: number }[];
   most_highlighted: { id: number; title: string; highlight_count: number }[];
 }
+
+export interface ActivityItem {
+  type: 'document_added' | 'highlight_added';
+  at: string;
+  document: { id: number; title: string };
+  highlight: { id: number; quote: string; color: Color; note: string | null } | null;
+}
+
+export interface ActivityPage {
+  items: ActivityItem[];
+  next_before: string | null;
+}
