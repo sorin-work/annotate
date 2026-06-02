@@ -72,3 +72,13 @@ def test_bulk_is_all_or_nothing_across_users(client, auth, other_auth, document)
     assert response.status_code == 404
     assert len(client.get("/api/highlights", headers=auth).json()["items"]) == 1
     assert client.get("/api/highlights", headers=other_auth).json()["total"] == 1
+
+
+def test_bulk_request_size_limits(client, auth, document):
+    first = highlight(client, auth, document, "quick brown")
+    too_many_ids = bulk(client, auth, ids=list(range(1, 502)), delete=True)
+    assert too_many_ids.status_code == 422
+    too_many_tags = bulk(client, auth, ids=[first["id"]], add_tags=[f"t{n}" for n in range(21)])
+    assert too_many_tags.status_code == 422
+    long_tag = bulk(client, auth, ids=[first["id"]], add_tags=["x" * 51])
+    assert long_tag.status_code == 422
