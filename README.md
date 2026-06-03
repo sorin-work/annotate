@@ -8,17 +8,38 @@ everything, and get it all back out as Markdown or CSV.
 
 - **Documents**: paste plain text or Markdown, or upload `.txt`, `.md` and `.pdf`
   files (text is extracted from PDFs; scanned PDFs are not supported)
+- **Reader**: Markdown documents render headings, quotes, lists, code, bold,
+  italic and links, and all of it stays highlightable
 - **Highlights**: select any passage in the reader and pick one of five colours;
-  overlapping highlights are fine
+  overlapping highlights are fine, and a deleted highlight can be undone
 - **Notes and tags**: attach a note and any number of tags to each highlight;
   renaming a tag onto an existing one merges them
 - **Collections**: group documents into shelves; a document can live in several
+- **Highlights page**: every highlight in one list, filtered by tag, colour or
+  collection and sorted by date or reading order; select several to tag,
+  recolour or delete them together
+- **Dashboard and recent activity**: totals, colours, top tags, highlights per
+  week, and a day-by-day feed of what you added
 - **Search**: one box across document text, highlights, notes and tags, with
   filters for tag, colour and collection
 - **Export**: a single document, a collection, a tag or everything, as Markdown
   (ready for Obsidian or a blog post) or CSV (for spreadsheets)
+- **Keyboard and themes**: shortcuts for highlighting and moving around (see
+  below), and a dark theme that follows the system or can be picked in settings
 - **Accounts**: email and password sign-up, JWT bearer tokens, argon2 password
   hashing; every document, highlight, tag and collection is private to its owner
+
+## Keyboard shortcuts
+
+Press `?` anywhere in the app for this list. Shortcuts are ignored while typing
+in a field.
+
+| Key       | Where    | Does                                            |
+| --------- | -------- | ----------------------------------------------- |
+| `/`       | anywhere | Focus the search box                            |
+| `1` – `5` | reader   | Highlight the selection in that colour          |
+| `j` / `k` | reader   | Next / previous highlight                       |
+| `Esc`     | reader   | Drop the selection, or close the open highlight |
 
 ## Stack
 
@@ -149,11 +170,14 @@ All endpoints live under `/api` and, apart from health and auth, need an
 | GET    | `/documents/{id}`                       | Full text, collections, highlight count  |
 | GET    | `/documents/{id}/highlights`            | Highlights in reading order              |
 | POST   | `/documents/{id}/highlights`            | Highlight a range                        |
-| GET    | `/highlights`                           | All highlights, filterable               |
+| GET    | `/highlights`                           | All highlights, filterable and sortable  |
+| POST   | `/highlights/bulk`                      | Tag, recolour or delete many at once     |
 | PATCH  | `/highlights/{id}`                      | Change note, colour or tags              |
 | GET    | `/tags`                                 | Tags with usage counts                   |
 | GET    | `/collections`                          | Collections with document counts         |
 | GET    | `/search?q=`                            | Documents and highlights matching `q`    |
+| GET    | `/stats`                                | Numbers for the dashboard                |
+| GET    | `/activity`                             | Recent documents and highlights          |
 | GET    | `/documents/{id}/export?format=md\|csv` | Export one document's highlights         |
 | GET    | `/export?format=md\|csv`                | Export everything, or a tag/collection   |
 
