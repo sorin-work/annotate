@@ -1,9 +1,10 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Request, status
 from sqlalchemy import select
 
 from app.deps import CurrentUser, DbSession
-from app.errors import AppError, ConflictError, UnauthorizedError
+from app.errors import AppError, ConflictError, RateLimitedError, UnauthorizedError
 from app.models import User
+from app.ratelimit import SlidingWindowLimiter
 from app.schemas.auth import (
     ChangePasswordRequest,
     LoginRequest,
@@ -23,8 +24,24 @@ def _token_response(user: User) -> TokenResponse:
     )
 
 
+def _client_ip(request: Request) -> str:
+    return request.client.host if request.client else "unknown"
+
+
+def _check_limit(limiter: SlidingWindowLimiter, key: str) -> None:
+    if limiter.max_hits <= 0:
+        return
+    retry_after = limiter.retry_after(key)
+    if retry_after is not None:
+        raise RateLimitedError(retry_after)
+
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-def register(data: RegisterRequest, db: DbSession) -> TokenResponse:
+def register(data: RegisterRequest, request: Request, db: DbSession) -> TokenResponse:
+    limiter: SlidingWindowLimiter = request.app.state.register_limiter
+    key = _client_ip(request)
+    _check_limit(limiter, key)
+    limiter.hit(key)
     if db.scalar(select(User.id).where(User.email == data.email)) is not None:
         raise ConflictError("An account with this email already exists", code="email_taken")
     user = User(
@@ -38,10 +55,17 @@ def register(data: RegisterRequest, db: DbSession) -> TokenResponse:
 
 
 @router.post("/login")
-def login(data: LoginRequest, db: DbSession) -> TokenResponse:
+def login(data: LoginRequest, request: Request, db: DbSession) -> TokenResponse:
+    # Only failed attempts count, per email and address, so a typo is harmless
+    # but guessing passwords is slow.
+    limiter: SlidingWindowLimiter = request.app.state.login_limiter
+    key = f"{_client_ip(request)}:{data.email}"
+    _check_limit(limiter, key)
     user = db.scalar(select(User).where(User.email == data.email))
     if user is None or not verify_password(data.password, user.password_hash):
+        limiter.hit(key)
         raise UnauthorizedError("Incorrect email or password", code="invalid_credentials")
+    limiter.reset(key)
     return _token_response(user)
 
 

@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     # Comma separated list of origins allowed to call the API from a browser.
     cors_origins: str = "http://localhost:5173,http://localhost:5174"
 
+    # Failed sign-ins allowed per email and client address, and sign-ups per
+    # address, within the window. 0 turns the limit off.
+    login_attempts: int = 10
+    login_window_minutes: int = 15
+    registrations_per_hour: int = 5
+
     max_upload_mb: int = 10
     log_level: str = "info"
 

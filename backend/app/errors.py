@@ -1,6 +1,7 @@
 """Consistent JSON errors: ``{"error": {"code": "...", "message": "..."}}``."""
 
 import logging
+import math
 from typing import Any
 
 from fastapi import FastAPI, Request
@@ -16,9 +17,17 @@ class AppError(Exception):
     status_code = 400
     code = "bad_request"
 
-    def __init__(self, message: str, *, code: str | None = None, status_code: int | None = None):
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str | None = None,
+        status_code: int | None = None,
+        headers: dict[str, str] | None = None,
+    ):
         super().__init__(message)
         self.message = message
+        self.headers = headers
         if code:
             self.code = code
         if status_code:
@@ -40,6 +49,19 @@ class UnauthorizedError(AppError):
     code = "unauthorized"
 
 
+class RateLimitedError(AppError):
+    status_code = 429
+    code = "rate_limited"
+
+    def __init__(self, retry_after: int):
+        minutes = math.ceil(retry_after / 60)
+        wait = f"{minutes} minute{'s' if minutes != 1 else ''}"
+        super().__init__(
+            f"Too many attempts. Try again in {wait}.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
+
 def error_body(code: str, message: str, details: Any = None) -> dict[str, Any]:
     error: dict[str, Any] = {"code": code, "message": message}
     if details is not None:
@@ -54,13 +76,16 @@ _HTTP_CODES = {
     404: "not_found",
     405: "method_not_allowed",
     413: "payload_too_large",
+    429: "rate_limited",
 }
 
 
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def handle_app_error(_: Request, exc: AppError) -> JSONResponse:
-        return JSONResponse(error_body(exc.code, exc.message), status_code=exc.status_code)
+        return JSONResponse(
+            error_body(exc.code, exc.message), status_code=exc.status_code, headers=exc.headers
+        )
 
     @app.exception_handler(RequestValidationError)
     async def handle_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
