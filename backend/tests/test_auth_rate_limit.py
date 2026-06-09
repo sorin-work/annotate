@@ -1,4 +1,5 @@
 from app.config import get_settings
+from app.ratelimit import SlidingWindowLimiter
 from tests.conftest import register
 
 
@@ -37,3 +38,9 @@ def test_registrations_are_limited_per_address(client):
         json={"email": "one-more@example.com", "password": "correct-horse-battery"},
     )
     assert response.status_code == 429
+
+
+def test_a_limit_of_zero_turns_limiting_off(client, auth):
+    client.app.state.login_limiter = SlidingWindowLimiter(0, 900)
+    for _ in range(get_settings().login_attempts + 5):
+        assert login(client).status_code == 401
