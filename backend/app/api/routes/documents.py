@@ -22,11 +22,14 @@ def list_documents(
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> Page[DocumentSummary]:
-    documents, total = service.list_documents(
+    rows, total = service.list_documents(
         db, user, q=q, collection_id=collection_id, sort=sort, limit=limit, offset=offset
     )
-    counts = service.highlight_counts(db, [d.id for d in documents])
-    return Page(items=[service.to_summary(d, counts.get(d.id, 0)) for d in documents], total=total)
+    counts = service.highlight_counts(db, [d.id for d, _ in rows])
+    return Page(
+        items=[service.to_summary(d, counts.get(d.id, 0), head) for d, head in rows],
+        total=total,
+    )
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)

@@ -1,7 +1,7 @@
 from pathlib import PurePath
 
 from sqlalchemy import func, or_, select, update
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer
 
 from app.db import utcnow
 from app.errors import AppError, NotFoundError
@@ -11,6 +11,8 @@ from app.services import text as textutil
 from app.services.pdf import extract_pdf
 
 TEXT_EXTENSIONS = {".txt": "text", ".text": "text", ".md": "markdown", ".markdown": "markdown"}
+# The library shows a short excerpt; this much text is plenty to cut it from.
+EXCERPT_SOURCE_CHARS = 2000
 SORTS = {
     "recent": (func.coalesce(Document.last_opened_at, Document.created_at).desc(),),
     "created": (Document.created_at.desc(),),
@@ -133,7 +135,11 @@ def list_documents(
     sort: str = "recent",
     limit: int = 50,
     offset: int = 0,
-) -> tuple[list[Document], int]:
+) -> tuple[list[tuple[Document, str]], int]:
+    """A page of documents, each with the start of its text for the excerpt.
+
+    The full text is never loaded: documents can be megabytes long.
+    """
     query = select(Document).where(Document.owner_id == user.id)
     if q:
         pattern = textutil.like_pattern(q)
@@ -151,15 +157,23 @@ def list_documents(
             collection_documents, collection_documents.c.document_id == Document.id
         ).where(collection_documents.c.collection_id == collection_id)
 
-    total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
+    ids = query.with_only_columns(Document.id).subquery()
+    total = db.scalar(select(func.count()).select_from(ids)) or 0
     order = SORTS.get(sort, SORTS["recent"])
-    documents = list(
-        db.scalars(query.order_by(*order, Document.id.desc()).limit(limit).offset(offset))
+    head = func.substr(Document.content, 1, EXCERPT_SOURCE_CHARS).label("head")
+    rows = db.execute(
+        query.add_columns(head)
+        .options(defer(Document.content))
+        .order_by(*order, Document.id.desc())
+        .limit(limit)
+        .offset(offset)
     )
-    return documents, total
+    return [(document, text) for document, text in rows], total
 
 
-def to_summary(document: Document, highlight_count: int = 0) -> DocumentSummary:
+def to_summary(
+    document: Document, highlight_count: int = 0, head: str | None = None
+) -> DocumentSummary:
     return DocumentSummary(
         id=document.id,
         title=document.title,
@@ -167,7 +181,7 @@ def to_summary(document: Document, highlight_count: int = 0) -> DocumentSummary:
         author=document.author,
         word_count=document.word_count,
         highlight_count=highlight_count,
-        excerpt=textutil.excerpt(document.content),
+        excerpt=textutil.excerpt(document.content if head is None else head),
         created_at=document.created_at,
         updated_at=document.updated_at,
         last_opened_at=document.last_opened_at,

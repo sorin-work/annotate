@@ -1,3 +1,5 @@
+from sqlalchemy import event
+
 from tests.conftest import SAMPLE_TEXT, register
 from tests.pdf_fixture import make_pdf
 
@@ -188,3 +190,22 @@ def test_upload_rejects_empty_and_large_files(client, auth, monkeypatch):
     )
     assert response.status_code == 413
     assert response.json()["error"]["code"] == "payload_too_large"
+
+
+def test_listing_documents_does_not_load_their_full_text(client, auth, engine):
+    long_text = "Opening words of a long book. " + "filler " * 5000
+    client.post("/api/documents", json={"title": "Long", "content": long_text}, headers=auth)
+
+    statements: list[str] = []
+
+    def capture(conn, cursor, statement, *args):
+        statements.append(statement)
+
+    event.listen(engine, "before_cursor_execute", capture)
+    try:
+        body = client.get("/api/documents", headers=auth).json()
+    finally:
+        event.remove(engine, "before_cursor_execute", capture)
+
+    assert body["items"][0]["excerpt"].startswith("Opening words of a long book.")
+    assert not any("documents.content AS" in s for s in statements)
