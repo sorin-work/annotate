@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { Suspense, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
@@ -78,7 +78,9 @@ export default function Layout() {
       <main className="content" id="main" tabIndex={-1}>
         {/* Keyed by path so moving to another page clears a crash. */}
         <ErrorBoundary key={location.pathname}>
-          <Outlet />
+          <Suspense fallback={<p className="muted">Loading…</p>}>
+            <Outlet />
+          </Suspense>
         </ErrorBoundary>
       </main>
       {showShortcuts && <ShortcutsHelp onClose={() => setShowShortcuts(false)} />}
