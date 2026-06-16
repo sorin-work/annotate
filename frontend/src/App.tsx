@@ -1,9 +1,10 @@
 import { Suspense, lazy } from 'react';
-import { Navigate, Route, Routes } from 'react-router';
+import { Route, Routes } from 'react-router';
 import { GuestOnly, RequireAuth } from './auth/guards';
 import Layout from './components/Layout';
 import LibraryPage from './pages/LibraryPage';
 import LoginPage from './pages/LoginPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 // The library and sign-in load with the app; every other page is its own chunk.
 const ActivityPage = lazy(() => import('./pages/ActivityPage'));
@@ -55,9 +56,9 @@ export default function App() {
           <Route path="search" element={<SearchPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="activity" element={<ActivityPage />} />
+          <Route path="*" element={<NotFoundPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
   );
