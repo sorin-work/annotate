@@ -5,12 +5,12 @@ description = "API for annotate: highlight and take notes on your reading."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.121",
-    "uvicorn[standard]>=0.38",
-    "sqlalchemy>=2.0.44",
-    "alembic>=1.17",
+    "fastapi>=0.135",
+    "uvicorn[standard]>=0.40",
+    "sqlalchemy>=2.0.48",
+    "alembic>=1.18",
     "psycopg[binary]>=3.2",
-    "pydantic-settings>=2.11",
+    "pydantic-settings>=2.13",
     "email-validator>=2.3",
     "argon2-cffi>=25.1",
     "pyjwt>=2.10",
@@ -20,9 +20,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.4",
+    "pytest>=9.0",
     "httpx>=0.28",
-    "ruff>=0.14",
+    "ruff>=0.15",
 ]
 
 [build-system]
@@ -48,3 +48,7 @@ known-third-party = ["alembic"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+filterwarnings = [
+    # Newer Starlette nags about httpx in the test client; it still works fine.
+    "ignore:Using `httpx` with `starlette.testclient`",
+]
