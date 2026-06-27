@@ -28,6 +28,10 @@ class Document(Base):
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(default=utcnow, onupdate=utcnow)
     last_opened_at: Mapped[datetime | None] = mapped_column()
+    # How far through the text the reader has scrolled (0 to 1), and the
+    # offset of the block at the top of the screen, to resume from.
+    reading_progress: Mapped[float] = mapped_column(default=0.0, server_default="0")
+    last_position: Mapped[int | None] = mapped_column()
 
     highlights: Mapped[list["Highlight"]] = relationship(
         back_populates="document",
