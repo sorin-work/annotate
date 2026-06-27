@@ -45,6 +45,11 @@ class DocumentUpdate(ApiModel):
     source_url: SourceUrl = None
 
 
+class ReadingProgress(ApiModel):
+    progress: float = Field(ge=0, le=1)
+    position: int | None = Field(default=None, ge=0)
+
+
 class CollectionRef(ApiModel):
     id: int
     name: str
@@ -61,10 +66,12 @@ class DocumentSummary(ApiModel):
     created_at: datetime
     updated_at: datetime
     last_opened_at: datetime | None
+    reading_progress: float = 0.0
 
 
 class DocumentDetail(DocumentSummary):
     content: str
     original_filename: str | None
     source_url: str | None
+    last_position: int | None = None
     collections: list[CollectionRef] = []

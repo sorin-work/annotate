@@ -6,7 +6,13 @@ from app.config import get_settings
 from app.deps import CurrentUser, DbSession
 from app.errors import AppError
 from app.schemas.common import Page
-from app.schemas.documents import DocumentCreate, DocumentDetail, DocumentSummary, DocumentUpdate
+from app.schemas.documents import (
+    DocumentCreate,
+    DocumentDetail,
+    DocumentSummary,
+    DocumentUpdate,
+    ReadingProgress,
+)
 from app.services import documents as service
 
 router = APIRouter(prefix="/documents", tags=["documents"])
@@ -69,6 +75,14 @@ def update_document(
 ) -> DocumentDetail:
     document = service.get_document(db, user, document_id)
     return service.to_detail(service.update_document(db, document, data))
+
+
+@router.put("/{document_id}/progress")
+def save_progress(
+    document_id: int, data: ReadingProgress, user: CurrentUser, db: DbSession
+) -> ReadingProgress:
+    document = service.get_document(db, user, document_id)
+    return service.save_progress(db, document, data)
 
 
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)

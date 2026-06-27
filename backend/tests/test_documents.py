@@ -209,3 +209,28 @@ def test_listing_documents_does_not_load_their_full_text(client, auth, engine):
 
     assert body["items"][0]["excerpt"].startswith("Opening words of a long book.")
     assert not any("documents.content AS" in s for s in statements)
+
+
+def test_save_reading_progress(client, auth, document):
+    url = f"/api/documents/{document['id']}/progress"
+    response = client.put(url, json={"progress": 0.4, "position": 46}, headers=auth)
+    assert response.status_code == 200
+    assert response.json() == {"progress": 0.4, "position": 46}
+
+    detail = client.get(f"/api/documents/{document['id']}", headers=auth).json()
+    assert detail["reading_progress"] == 0.4
+    assert detail["last_position"] == 46
+    assert detail["updated_at"] == document["updated_at"]
+    listed = client.get("/api/documents", headers=auth).json()["items"][0]
+    assert listed["reading_progress"] == 0.4
+
+
+def test_reading_progress_validation(client, auth, other_auth, document):
+    url = f"/api/documents/{document['id']}/progress"
+    assert client.put(url, json={"progress": 1.5}, headers=auth).status_code == 422
+    assert client.put(url, json={"progress": 0.5, "position": -1}, headers=auth).status_code == 422
+    assert client.put(url, json={"progress": 0.5}, headers=other_auth).status_code == 404
+
+    # A position past the end (the text cannot change, but be safe) is clamped.
+    response = client.put(url, json={"progress": 1, "position": 10_000}, headers=auth)
+    assert response.json()["position"] == len(document["content"])

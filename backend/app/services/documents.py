@@ -6,7 +6,13 @@ from sqlalchemy.orm import Session, defer
 from app.db import utcnow
 from app.errors import AppError, NotFoundError
 from app.models import Collection, Document, Highlight, User, collection_documents
-from app.schemas.documents import DocumentCreate, DocumentDetail, DocumentSummary, DocumentUpdate
+from app.schemas.documents import (
+    DocumentCreate,
+    DocumentDetail,
+    DocumentSummary,
+    DocumentUpdate,
+    ReadingProgress,
+)
 from app.services import text as textutil
 from app.services.pdf import extract_pdf
 
@@ -93,6 +99,26 @@ def mark_opened(db: Session, document: Document) -> None:
     )
     db.commit()
     document.last_opened_at = opened_at
+
+
+def save_progress(db: Session, document: Document, data: ReadingProgress) -> ReadingProgress:
+    """Store how far the user got; like opening, this is not an edit of the document."""
+    position = data.position
+    if position is not None:
+        position = min(position, len(document.content))
+    db.execute(
+        update(Document)
+        .where(Document.id == document.id)
+        .values(
+            reading_progress=data.progress,
+            last_position=position,
+            updated_at=Document.updated_at,
+        )
+    )
+    db.commit()
+    document.reading_progress = data.progress
+    document.last_position = position
+    return ReadingProgress(progress=data.progress, position=position)
 
 
 def update_document(db: Session, document: Document, data: DocumentUpdate) -> Document:
@@ -185,6 +211,7 @@ def to_summary(
         created_at=document.created_at,
         updated_at=document.updated_at,
         last_opened_at=document.last_opened_at,
+        reading_progress=document.reading_progress,
     )
 
 
@@ -195,5 +222,6 @@ def to_detail(document: Document) -> DocumentDetail:
         content=document.content,
         original_filename=document.original_filename,
         source_url=document.source_url,
+        last_position=document.last_position,
         collections=[{"id": c.id, "name": c.name} for c in document.collections],
     )
