@@ -6,6 +6,7 @@ import type { DocumentSort } from '../api/documents';
 import EmptyState from '../components/EmptyState';
 import ErrorMessage from '../components/ErrorMessage';
 import PageHeader from '../components/PageHeader';
+import ProgressBar from '../components/ProgressBar';
 import { plural, readingTime, timeAgo } from '../lib/format';
 import { parsePage } from '../lib/params';
 import { useDebouncedValue } from '../lib/useDebouncedValue';
@@ -119,7 +120,11 @@ export default function LibraryPage() {
                 {doc.last_opened_at
                   ? `opened ${timeAgo(doc.last_opened_at)}`
                   : `added ${timeAgo(doc.created_at)}`}
+                {doc.reading_progress >= 0.98 && ' · finished'}
               </p>
+              {doc.reading_progress > 0 && (
+                <ProgressBar value={doc.reading_progress} label={`Progress in ${doc.title}`} />
+              )}
             </Link>
           </li>
         ))}
