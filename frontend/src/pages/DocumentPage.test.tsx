@@ -19,9 +19,11 @@ const doc: DocumentDetail = {
   created_at: '2026-01-01T00:00:00Z',
   updated_at: '2026-01-01T00:00:00Z',
   last_opened_at: null,
+  reading_progress: 0,
   content,
   original_filename: null,
   source_url: null,
+  last_position: null,
   collections: [{ id: 2, name: 'Philosophy' }],
 };
 

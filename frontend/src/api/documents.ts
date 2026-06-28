@@ -43,4 +43,10 @@ export const documentsApi = {
     data: Partial<{ title: string; author: string | null; source_url: string | null }>,
   ) => api.patch<DocumentDetail>(`/documents/${id}`, data),
   remove: (id: number) => api.delete(`/documents/${id}`),
+  saveProgress: (id: number, progress: number, position: number | null, keepalive = false) =>
+    api.put<{ progress: number; position: number | null }>(
+      `/documents/${id}/progress`,
+      { progress, position },
+      { keepalive },
+    ),
 };

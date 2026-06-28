@@ -18,7 +18,7 @@ export class ApiError extends Error {
   }
 }
 
-type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 /** Called when the API rejects our token, so the app can sign the user out. */
 let onUnauthorized: (() => void) | null = null;
@@ -31,6 +31,7 @@ async function send(
   path: string,
   body?: BodyInit,
   json = false,
+  keepalive = false,
 ): Promise<Response> {
   const headers: Record<string, string> = {};
   const token = tokenStore.get();
@@ -39,7 +40,8 @@ async function send(
 
   let res: Response;
   try {
-    res = await fetch(`/api${path}`, { method, headers, body });
+    // keepalive lets a request finish while the page is being closed.
+    res = await fetch(`/api${path}`, { method, headers, body, ...(keepalive && { keepalive }) });
   } catch {
     // fetch only rejects when the request never got an answer.
     throw new ApiError(
@@ -57,12 +59,18 @@ async function send(
   return res;
 }
 
-async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
+async function request<T>(
+  method: Method,
+  path: string,
+  body?: unknown,
+  keepalive = false,
+): Promise<T> {
   const res = await send(
     method,
     path,
     body === undefined ? undefined : JSON.stringify(body),
     body !== undefined,
+    keepalive,
   );
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
@@ -71,6 +79,8 @@ async function request<T>(method: Method, path: string, body?: unknown): Promise
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body ?? {}),
+  put: <T>(path: string, body: unknown, { keepalive = false } = {}) =>
+    request<T>('PUT', path, body, keepalive),
   patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
   delete: (path: string) => request<void>('DELETE', path),
   upload: async <T>(path: string, form: FormData): Promise<T> =>

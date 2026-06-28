@@ -29,12 +29,14 @@ export interface DocumentSummary {
   created_at: string;
   updated_at: string;
   last_opened_at: string | null;
+  reading_progress: number;
 }
 
 export interface DocumentDetail extends DocumentSummary {
   content: string;
   original_filename: string | null;
   source_url: string | null;
+  last_position: number | null;
   collections: { id: number; name: string }[];
 }
 

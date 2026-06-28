@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { documentsApi } from '../api/documents';
 import { exportsApi } from '../api/exports';
@@ -21,6 +21,7 @@ import SelectionToolbar from '../components/SelectionToolbar';
 import { useToast } from '../components/Toast';
 import { formatDate, plural, readingTime } from '../lib/format';
 import { scrollBehavior } from '../lib/motion';
+import { scrollToOffset, useReadingProgress } from '../lib/progress';
 import { useShortcuts } from '../lib/shortcuts';
 
 export default function DocumentPage() {
@@ -51,6 +52,29 @@ export default function DocumentPage() {
   const doc = documentQuery.data;
   const highlights = highlightsQuery.data ?? [];
   const highlightsKey = ['highlights', id];
+
+  // Pick up where the reader left off, unless a link pointed at a highlight.
+  const readerRef = useRef<HTMLDivElement>(null);
+  const resumedId = useRef<number | null>(null);
+  useEffect(() => {
+    if (!doc || resumedId.current === doc.id) return;
+    resumedId.current = doc.id;
+    if (params.get('highlight') || doc.last_position === null || !readerRef.current) return;
+    if (doc.reading_progress < 0.98) scrollToOffset(readerRef.current, doc.last_position);
+  }, [doc, params]);
+
+  useReadingProgress(readerRef, Boolean(doc), (spot, leaving) => {
+    documentsApi
+      .saveProgress(id, spot.progress, spot.position, leaving)
+      .then(() => {
+        queryClient.setQueryData<typeof doc>(['document', id], (old) =>
+          old ? { ...old, reading_progress: spot.progress, last_position: spot.position } : old,
+        );
+        queryClient.invalidateQueries({ queryKey: ['documents'] });
+      })
+      // Losing one progress update is harmless; the next scroll saves again.
+      .catch(() => {});
+  });
 
   const refreshRelated = () => {
     queryClient.invalidateQueries({ queryKey: ['tags'] });
@@ -215,6 +239,7 @@ export default function DocumentPage() {
           <p className="muted">
             {doc.author && <span className="author">{doc.author} · </span>}
             {readingTime(doc.word_count)} · added {formatDate(doc.created_at)}
+            {doc.reading_progress > 0 && ` · ${Math.round(doc.reading_progress * 100)}% read`}
             {doc.source_url && (
               <>
                 {' · '}
@@ -255,14 +280,16 @@ export default function DocumentPage() {
         </header>
 
         <p className="hint muted small">Select any passage to highlight it.</p>
-        <Reader
-          content={doc.content}
-          sourceType={doc.source_type}
-          highlights={highlights}
-          activeId={activeId}
-          onSelect={onSelect}
-          onHighlightClick={onHighlightClick}
-        />
+        <div ref={readerRef}>
+          <Reader
+            content={doc.content}
+            sourceType={doc.source_type}
+            highlights={highlights}
+            activeId={activeId}
+            onSelect={onSelect}
+            onHighlightClick={onHighlightClick}
+          />
+        </div>
         {selection && (
           <SelectionToolbar
             selection={selection}
