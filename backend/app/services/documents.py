@@ -19,6 +19,13 @@ from app.services.pdf import extract_pdf
 TEXT_EXTENSIONS = {".txt": "text", ".text": "text", ".md": "markdown", ".markdown": "markdown"}
 # The library shows a short excerpt; this much text is plenty to cut it from.
 EXCERPT_SOURCE_CHARS = 2000
+# Progress at or above this counts as finished; the last lines rarely reach the top.
+FINISHED_AT = 0.98
+STATUSES = {
+    "unread": Document.reading_progress == 0,
+    "reading": (Document.reading_progress > 0) & (Document.reading_progress < FINISHED_AT),
+    "finished": Document.reading_progress >= FINISHED_AT,
+}
 SORTS = {
     "recent": (func.coalesce(Document.last_opened_at, Document.created_at).desc(),),
     "created": (Document.created_at.desc(),),
@@ -158,6 +165,7 @@ def list_documents(
     *,
     q: str | None = None,
     collection_id: int | None = None,
+    status: str | None = None,
     sort: str = "recent",
     limit: int = 50,
     offset: int = 0,
@@ -175,6 +183,8 @@ def list_documents(
                 Document.author.ilike(pattern, escape=textutil.LIKE_ESCAPE),
             )
         )
+    if status is not None:
+        query = query.where(STATUSES[status])
     if collection_id is not None:
         collection = db.get(Collection, collection_id)
         if collection is None or collection.owner_id != user.id:

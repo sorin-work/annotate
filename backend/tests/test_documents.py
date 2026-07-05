@@ -234,3 +234,23 @@ def test_reading_progress_validation(client, auth, other_auth, document):
     # A position past the end (the text cannot change, but be safe) is clamped.
     response = client.put(url, json={"progress": 1, "position": 10_000}, headers=auth)
     assert response.json()["position"] == len(document["content"])
+
+
+def test_filter_documents_by_reading_status(client, auth):
+    ids = {}
+    for title, progress in [("Unread", 0), ("Halfway", 0.5), ("Done", 0.99)]:
+        doc = client.post("/api/documents", json={"title": title, "content": "x"}, headers=auth)
+        ids[title] = doc.json()["id"]
+        if progress:
+            client.put(
+                f"/api/documents/{ids[title]}/progress", json={"progress": progress}, headers=auth
+            )
+
+    def titles(status):
+        body = client.get(f"/api/documents?status={status}", headers=auth).json()
+        return [d["title"] for d in body["items"]]
+
+    assert titles("unread") == ["Unread"]
+    assert titles("reading") == ["Halfway"]
+    assert titles("finished") == ["Done"]
+    assert client.get("/api/documents?status=skimmed", headers=auth).status_code == 422
