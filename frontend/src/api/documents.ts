@@ -2,10 +2,12 @@ import { api, toQuery } from './client';
 import type { DocumentDetail, DocumentSummary, Page } from './types';
 
 export type DocumentSort = 'recent' | 'created' | 'title';
+export type ReadingStatus = 'unread' | 'reading' | 'finished';
 
 export interface DocumentFilters {
   q?: string;
   collectionId?: number | null;
+  status?: ReadingStatus | null;
   sort?: DocumentSort;
   limit?: number;
   offset?: number;
@@ -25,6 +27,7 @@ export const documentsApi = {
       `/documents${toQuery({
         q: filters.q,
         collection_id: filters.collectionId,
+        status: filters.status,
         sort: filters.sort,
         limit: filters.limit,
         offset: filters.offset,

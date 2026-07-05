@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router';
 import { collectionsApi } from '../api/collections';
 import { documentsApi } from '../api/documents';
-import type { DocumentSort } from '../api/documents';
+import type { DocumentSort, ReadingStatus } from '../api/documents';
 import EmptyState from '../components/EmptyState';
 import ErrorMessage from '../components/ErrorMessage';
 import PageHeader from '../components/PageHeader';
@@ -12,12 +12,19 @@ import { parsePage } from '../lib/params';
 import { useDebouncedValue } from '../lib/useDebouncedValue';
 
 const PAGE_SIZE = 20;
+const STATUSES: { value: ReadingStatus; label: string }[] = [
+  { value: 'unread', label: 'Not started' },
+  { value: 'reading', label: 'Reading' },
+  { value: 'finished', label: 'Finished' },
+];
 
 export default function LibraryPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get('q') ?? '';
   const sort = (params.get('sort') as DocumentSort | null) ?? 'recent';
   const collectionId = params.get('collection') ? Number(params.get('collection')) : null;
+  const statusParam = params.get('status');
+  const status = STATUSES.find((s) => s.value === statusParam)?.value ?? null;
   const page = parsePage(params.get('page'));
   // Typing in the filter updates the url right away but only queries once it settles.
   const search = useDebouncedValue(q.trim(), 250);
@@ -27,12 +34,13 @@ export default function LibraryPage() {
     queryFn: collectionsApi.list,
   });
   const { data, isPending, error } = useQuery({
-    queryKey: ['documents', { q: search, sort, collectionId, page }],
+    queryKey: ['documents', { q: search, sort, collectionId, status, page }],
     queryFn: () =>
       documentsApi.list({
         q: search,
         sort,
         collectionId,
+        status,
         limit: PAGE_SIZE,
         offset: (page - 1) * PAGE_SIZE,
       }),
@@ -48,7 +56,7 @@ export default function LibraryPage() {
   }
 
   const pages = data ? Math.ceil(data.total / PAGE_SIZE) : 1;
-  const filtered = Boolean(q || collectionId);
+  const filtered = Boolean(q || collectionId || status);
 
   return (
     <>
@@ -79,6 +87,18 @@ export default function LibraryPage() {
           {collections.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Reading status"
+          value={status ?? ''}
+          onChange={(e) => update('status', e.target.value)}
+        >
+          <option value="">Any progress</option>
+          {STATUSES.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>
