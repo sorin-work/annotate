@@ -73,4 +73,14 @@ describe('useReadingProgress', () => {
     vi.advanceTimersByTime(1000);
     expect(onSave).toHaveBeenCalledTimes(1);
   });
+
+  it('saves short documents that never scroll', () => {
+    const { root } = container([0], [40]);
+    root.getBoundingClientRect = () => ({ top: 80, height: 300 }) as DOMRect;
+    const onSave = vi.fn();
+    renderHook(() => useReadingProgress({ current: root }, true, onSave));
+
+    vi.advanceTimersByTime(1000);
+    expect(onSave).toHaveBeenCalledWith({ progress: 1, position: 0 }, false);
+  });
 });

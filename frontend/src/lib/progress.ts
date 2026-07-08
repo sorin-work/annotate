@@ -41,8 +41,8 @@ export function readingSpot(container: HTMLElement): ReadingSpot {
 }
 
 /**
- * Reports the reading position a second after scrolling stops, and once more
- * when the page is hidden (switching tabs, closing it).
+ * Reports the reading position a second after opening and after scrolling
+ * stops, and once more when the page is hidden (switching tabs, closing it).
  */
 export function useReadingProgress(
   containerRef: RefObject<HTMLElement | null>,
@@ -76,6 +76,8 @@ export function useReadingProgress(
       if (document.visibilityState === 'hidden') save(true);
     }
 
+    // A short document may never scroll at all, so also save once after opening.
+    onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     document.addEventListener('visibilitychange', onHide);
     return () => {
