@@ -8,7 +8,7 @@ import ErrorMessage from '../components/ErrorMessage';
 import PageHeader from '../components/PageHeader';
 import ProgressBar from '../components/ProgressBar';
 import { plural, readingTime, timeAgo } from '../lib/format';
-import { parsePage } from '../lib/params';
+import { parseId, parsePage } from '../lib/params';
 import { useDebouncedValue } from '../lib/useDebouncedValue';
 
 const PAGE_SIZE = 20;
@@ -22,7 +22,7 @@ export default function LibraryPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get('q') ?? '';
   const sort = (params.get('sort') as DocumentSort | null) ?? 'recent';
-  const collectionId = params.get('collection') ? Number(params.get('collection')) : null;
+  const collectionId = parseId(params.get('collection'));
   const statusParam = params.get('status');
   const status = STATUSES.find((s) => s.value === statusParam)?.value ?? null;
   const page = parsePage(params.get('page'));

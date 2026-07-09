@@ -15,6 +15,7 @@ import ExportButtons from '../components/ExportButtons';
 import HighlightCard from '../components/HighlightCard';
 import PageHeader from '../components/PageHeader';
 import { plural } from '../lib/format';
+import { parseId } from '../lib/params';
 
 const PAGE_SIZE = 30;
 const SORTS: { value: HighlightSort; label: string }[] = [
@@ -27,7 +28,7 @@ export default function HighlightsPage() {
   const [params, setParams] = useSearchParams();
   const tag = params.get('tag');
   const color = params.get('color') as Color | null;
-  const collectionId = params.get('collection') ? Number(params.get('collection')) : null;
+  const collectionId = parseId(params.get('collection'));
   const sortParam = params.get('sort');
   const sort = SORTS.some((s) => s.value === sortParam) ? (sortParam as HighlightSort) : 'newest';
 
