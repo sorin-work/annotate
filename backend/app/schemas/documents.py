@@ -39,6 +39,11 @@ class DocumentCreate(ApiModel):
         return value
 
 
+class DocumentImport(ApiModel):
+    url: str = Field(min_length=1, max_length=2000)
+    title: str | None = Field(default=None, max_length=300)
+
+
 class DocumentUpdate(ApiModel):
     title: str | None = Field(default=None, min_length=1, max_length=300)
     author: str | None = Field(default=None, max_length=200)

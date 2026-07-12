@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     registrations_per_hour: int = 5
 
     max_upload_mb: int = 10
+    import_timeout_seconds: float = 15
     log_level: str = "info"
 
     @property

@@ -1,4 +1,5 @@
 from pathlib import PurePath
+from urllib.parse import urlsplit
 
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session, defer
@@ -15,6 +16,7 @@ from app.schemas.documents import (
 )
 from app.services import text as textutil
 from app.services.pdf import extract_pdf
+from app.services.url_import import FetchedDocument
 
 TEXT_EXTENSIONS = {".txt": "text", ".text": "text", ".md": "markdown", ".markdown": "markdown"}
 # The library shows a short excerpt; this much text is plenty to cut it from.
@@ -83,6 +85,27 @@ def create_from_upload(
         content=content,
         word_count=textutil.count_words(content),
         original_filename=path.name[:255],
+    )
+    db.add(document)
+    db.commit()
+    return document
+
+
+def create_from_url(
+    db: Session, user: User, fetched: FetchedDocument, title: str | None = None
+) -> Document:
+    content = textutil.normalise_newlines(fetched.content)
+    if not content.strip():
+        raise AppError("Could not find any text on that page", code="empty_page")
+    host = urlsplit(fetched.url).hostname or "Untitled"
+    document = Document(
+        owner_id=user.id,
+        title=((title or "").strip() or fetched.title or host)[:300],
+        source_type=fetched.source_type,
+        content=content,
+        word_count=textutil.count_words(content),
+        author=(fetched.author or "")[:200] or None,
+        source_url=fetched.url[:2000],
     )
     db.add(document)
     db.commit()

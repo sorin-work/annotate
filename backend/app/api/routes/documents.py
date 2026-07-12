@@ -3,17 +3,19 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, File, Form, Query, Response, UploadFile, status
 
 from app.config import get_settings
-from app.deps import CurrentUser, DbSession
+from app.deps import CurrentUser, DbSession, HttpClient
 from app.errors import AppError
 from app.schemas.common import Page
 from app.schemas.documents import (
     DocumentCreate,
     DocumentDetail,
+    DocumentImport,
     DocumentSummary,
     DocumentUpdate,
     ReadingProgress,
 )
 from app.services import documents as service
+from app.services.url_import import fetch_document
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -68,6 +70,14 @@ async def upload_document(
         )
     document = service.create_from_upload(db, user, file.filename or "", data, title)
     return service.to_detail(document)
+
+
+@router.post("/import", status_code=status.HTTP_201_CREATED)
+def import_document(
+    data: DocumentImport, user: CurrentUser, db: DbSession, http: HttpClient
+) -> DocumentDetail:
+    fetched = fetch_document(http, data.url)
+    return service.to_detail(service.create_from_url(db, user, fetched, data.title))
 
 
 @router.get("/{document_id}")

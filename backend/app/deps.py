@@ -1,9 +1,12 @@
+from collections.abc import Iterator
 from typing import Annotated
 
+import httpx
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.db import get_db
 from app.errors import UnauthorizedError
 from app.models import User
@@ -28,3 +31,13 @@ def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+def get_http_client() -> Iterator[httpx.Client]:
+    """Outgoing HTTP for document imports; tests swap in a mock transport."""
+    settings = get_settings()
+    with httpx.Client(timeout=settings.import_timeout_seconds, follow_redirects=True) as client:
+        yield client
+
+
+HttpClient = Annotated[httpx.Client, Depends(get_http_client)]
