@@ -24,6 +24,8 @@ class Settings(BaseSettings):
 
     max_upload_mb: int = 10
     import_timeout_seconds: float = 15
+    # Allow importing from localhost and private networks (handy in development).
+    import_allow_private: bool = False
     log_level: str = "info"
 
     @property

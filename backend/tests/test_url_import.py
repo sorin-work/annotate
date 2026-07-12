@@ -1,7 +1,10 @@
+import ipaddress
+
 import httpx
 import pytest
 
 from app.deps import get_http_client
+from app.services import url_import
 from tests.pdf_fixture import make_pdf
 
 ARTICLE = (
@@ -9,6 +12,20 @@ ARTICLE = (
     "<body><nav>Menu</nav><article><h1>On Notes</h1><p>Write them by hand.</p></article>"
     "</body></html>"
 )
+
+
+HOSTS = {"example.com": ["93.184.215.14"], "internal.test": ["10.0.0.5", "93.184.215.14"]}
+
+
+@pytest.fixture(autouse=True)
+def fake_dns(monkeypatch):
+    def resolve(host: str) -> list[str]:
+        try:
+            return [str(ipaddress.ip_address(host.strip("[]")))]
+        except ValueError:
+            return HOSTS.get(host, [])
+
+    monkeypatch.setattr(url_import, "resolve_host", resolve)
 
 
 @pytest.fixture
@@ -91,3 +108,20 @@ def test_import_errors(client, auth, pages):
     assert import_url(client, auth, "https://example.com/empty").json()["error"]["code"] == (
         "empty_page"
     )
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://127.0.0.1:8000/api/health",
+        "http://localhost/",
+        "http://169.254.169.254/latest/meta-data/",
+        "http://[::1]/",
+        "http://internal.test/",
+        "http://db:5432/",
+    ],
+)
+def test_import_refuses_private_addresses(client, auth, pages, url):
+    response = import_url(client, auth, url)
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "blocked_url"

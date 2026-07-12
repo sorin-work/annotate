@@ -1,5 +1,7 @@
 """Create documents from web pages, plain text, Markdown and PDFs on the web."""
 
+import ipaddress
+import socket
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
@@ -23,11 +25,36 @@ class FetchedDocument:
     url: str
 
 
+def resolve_host(host: str) -> list[str]:
+    try:
+        infos = socket.getaddrinfo(host, None, proto=socket.IPPROTO_TCP)
+    except (socket.gaierror, UnicodeError) as exc:
+        raise AppError("Could not find that website", code="fetch_failed", status_code=502) from exc
+    return [str(info[4][0]) for info in infos]
+
+
+def _is_public(address: str) -> bool:
+    ip = ipaddress.ip_address(address.split("%")[0])
+    return ip.is_global and not ip.is_multicast
+
+
 def check_url(url: str) -> str:
+    """Reject anything but public http(s) urls.
+
+    The api must not become a way to reach the machines around it (the
+    database, cloud metadata endpoints, a home router), so the host has to
+    resolve to public addresses only, unless IMPORT_ALLOW_PRIVATE is set.
+    """
     url = url.strip()
     parts = urlsplit(url)
     if parts.scheme not in ("http", "https") or not parts.hostname:
         raise AppError("Enter a full http:// or https:// address", code="invalid_url")
+    if not get_settings().import_allow_private:
+        addresses = resolve_host(parts.hostname)
+        if not addresses or not all(_is_public(a) for a in addresses):
+            raise AppError(
+                "Importing from private network addresses is not allowed", code="blocked_url"
+            )
     return url
 
 
