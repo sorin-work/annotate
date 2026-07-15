@@ -41,6 +41,8 @@ export const documentsApi = {
     if (title) form.append('title', title);
     return api.upload<DocumentDetail>('/documents/upload', form);
   },
+  importUrl: (url: string, title?: string) =>
+    api.post<DocumentDetail>('/documents/import', { url, title: title || null }),
   update: (
     id: number,
     data: Partial<{ title: string; author: string | null; source_url: string | null }>,

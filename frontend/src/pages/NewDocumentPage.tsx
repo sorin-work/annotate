@@ -7,7 +7,7 @@ import type { DocumentDetail } from '../api/types';
 import ErrorMessage from '../components/ErrorMessage';
 import PageHeader from '../components/PageHeader';
 
-type Mode = 'paste' | 'upload';
+type Mode = 'paste' | 'upload' | 'url';
 const ACCEPT = '.txt,.md,.markdown,.pdf,text/plain,text/markdown,application/pdf';
 
 export default function NewDocumentPage() {
@@ -21,6 +21,7 @@ export default function NewDocumentPage() {
   const [format, setFormat] = useState<'text' | 'markdown'>('text');
   const [content, setContent] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [url, setUrl] = useState('');
 
   const create = useMutation({
     mutationFn: (): Promise<DocumentDetail> =>
@@ -32,14 +33,21 @@ export default function NewDocumentPage() {
             author: author.trim() || null,
             source_url: sourceUrl.trim() || null,
           })
-        : documentsApi.upload(file!, title.trim() || undefined),
+        : mode === 'upload'
+          ? documentsApi.upload(file!, title.trim() || undefined)
+          : documentsApi.importUrl(url.trim(), title.trim() || undefined),
     onSuccess: (doc) => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       navigate(`/documents/${doc.id}`);
     },
   });
 
-  const canSubmit = mode === 'paste' ? title.trim() !== '' && content.trim() !== '' : file !== null;
+  const canSubmit =
+    mode === 'paste'
+      ? title.trim() !== '' && content.trim() !== ''
+      : mode === 'upload'
+        ? file !== null
+        : url.trim() !== '';
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -48,7 +56,10 @@ export default function NewDocumentPage() {
 
   return (
     <>
-      <PageHeader title="Add a document" subtitle="Paste text or upload a file to start reading." />
+      <PageHeader
+        title="Add a document"
+        subtitle="Paste text, upload a file or bring in a web page to start reading."
+      />
       <div className="tabs" role="tablist">
         <button
           type="button"
@@ -66,21 +77,35 @@ export default function NewDocumentPage() {
         >
           Upload a file
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === 'url'}
+          onClick={() => setMode('url')}
+        >
+          From a web page
+        </button>
       </div>
 
       <form className="form panel" onSubmit={onSubmit}>
         <label className="field">
-          <span>Title{mode === 'upload' && ' (optional)'}</span>
+          <span>Title{mode !== 'paste' && ' (optional)'}</span>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             maxLength={300}
             required={mode === 'paste'}
-            placeholder={mode === 'upload' ? 'Taken from the file if left empty' : undefined}
+            placeholder={
+              mode === 'upload'
+                ? 'Taken from the file if left empty'
+                : mode === 'url'
+                  ? 'Taken from the page if left empty'
+                  : undefined
+            }
           />
         </label>
 
-        {mode === 'paste' ? (
+        {mode === 'paste' && (
           <>
             <div className="field-row">
               <label className="field">
@@ -129,7 +154,8 @@ export default function NewDocumentPage() {
               />
             </label>
           </>
-        ) : (
+        )}
+        {mode === 'upload' && (
           <label className="field dropzone">
             <span>File</span>
             <input
@@ -140,6 +166,23 @@ export default function NewDocumentPage() {
             <small className="muted">
               Plain text, Markdown or PDF, up to 10 MB. PDFs need selectable text; scanned pages are
               not supported.
+            </small>
+          </label>
+        )}
+        {mode === 'url' && (
+          <label className="field">
+            <span>Web address</span>
+            <input
+              type="url"
+              inputMode="url"
+              placeholder="https://"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              required
+            />
+            <small className="muted">
+              An article, a plain text or Markdown file, or a PDF. annotate keeps the readable text
+              and leaves out menus and ads.
             </small>
           </label>
         )}
@@ -154,7 +197,7 @@ export default function NewDocumentPage() {
             className="button primary"
             disabled={!canSubmit || create.isPending}
           >
-            {create.isPending ? 'Saving…' : 'Add document'}
+            {create.isPending ? (mode === 'url' ? 'Fetching…' : 'Saving…') : 'Add document'}
           </button>
         </div>
       </form>
