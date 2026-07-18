@@ -98,7 +98,9 @@ def fetch_document(client: httpx.Client, url: str) -> FetchedDocument:
     text = body.decode(response.encoding or "utf-8", errors="replace")
     if media_type in ("text/html", "application/xhtml+xml"):
         page = extract(text)
-        return FetchedDocument(page.title, page.author, "markdown", page.text, final_url)
+        # Many pages name no author; the site is the next best thing to show.
+        author = page.author or page.site_name
+        return FetchedDocument(page.title, author, "markdown", page.text, final_url)
     if media_type == "text/markdown" or path.endswith((".md", ".markdown")):
         return FetchedDocument(textutil.markdown_title(text), None, "markdown", text, final_url)
     if media_type == "text/plain":

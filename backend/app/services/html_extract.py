@@ -137,6 +137,20 @@ def _render(block: _Block) -> str:
     return text
 
 
+_TITLE_SEPARATORS = (" | ", " - ", " — ", " – ", " · ", " :: ")
+
+
+def tidy_title(title: str | None, site_name: str | None) -> str | None:
+    """Drop a trailing " | Site Name" from a page title."""
+    if not title or not site_name:
+        return title
+    for separator in _TITLE_SEPARATORS:
+        suffix = f"{separator}{site_name}"
+        if title.lower().endswith(suffix.lower()) and len(title) > len(suffix):
+            return title[: -len(suffix)].strip()
+    return title
+
+
 def extract(html: str) -> ExtractedPage:
     parser = _Extractor()
     parser.feed(html)
@@ -151,4 +165,7 @@ def extract(html: str) -> ExtractedPage:
     author = meta.get("author") or meta.get("article:author") or None
     if author and author.startswith(("http://", "https://")):
         author = None  # article:author is sometimes a profile url
-    return ExtractedPage(title=title, author=author, site_name=meta.get("og:site_name"), text=text)
+    site_name = meta.get("og:site_name") or meta.get("application-name")
+    return ExtractedPage(
+        title=tidy_title(title, site_name), author=author, site_name=site_name, text=text
+    )

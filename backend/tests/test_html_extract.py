@@ -1,4 +1,4 @@
-from app.services.html_extract import extract
+from app.services.html_extract import extract, tidy_title
 
 PAGE = """<!doctype html>
 <html><head>
@@ -26,7 +26,7 @@ PAGE = """<!doctype html>
 
 def test_extracts_the_article_as_markdown():
     page = extract(PAGE)
-    assert page.title == "Slow Reading | The Quarterly"
+    assert page.title == "Slow Reading"
     assert page.author == "Ada Reader"
     assert page.site_name == "The Quarterly"
     assert page.text == (
@@ -51,3 +51,10 @@ def test_copes_with_unclosed_tags():
     page = extract("<html><body><p>One<p>Two<div>Three</body>")
     assert page.text == "One\n\nTwo\n\nThree"
     assert page.title is None
+
+
+def test_tidy_title_strips_the_site_name():
+    assert tidy_title("Slow Reading - The Quarterly", "The Quarterly") == "Slow Reading"
+    assert tidy_title("The Quarterly", "The Quarterly") == "The Quarterly"
+    assert tidy_title("Notes | Elsewhere", "The Quarterly") == "Notes | Elsewhere"
+    assert tidy_title("Notes", None) == "Notes"

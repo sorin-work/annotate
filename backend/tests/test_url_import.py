@@ -63,6 +63,18 @@ def test_import_an_article(client, auth, pages):
     assert doc["content"] == "# On Notes\n\nWrite them by hand."
 
 
+def test_import_falls_back_to_the_site_name_for_the_author(client, auth, pages):
+    pages["https://example.com/post"] = httpx.Response(
+        200,
+        text="<title>A Post | Field Notes</title>"
+        "<meta property='og:site_name' content='Field Notes'>"
+        "<article><p>Words.</p></article>",
+        headers={"content-type": "text/html"},
+    )
+    doc = import_url(client, auth, "https://example.com/post").json()
+    assert (doc["title"], doc["author"]) == ("A Post", "Field Notes")
+
+
 def test_import_plain_text_markdown_and_pdf(client, auth, pages):
     pages["https://example.com/a.txt"] = httpx.Response(
         200, text="Line one\r\nLine two", headers={"content-type": "text/plain"}
