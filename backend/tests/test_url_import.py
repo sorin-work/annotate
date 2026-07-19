@@ -75,6 +75,24 @@ def test_import_falls_back_to_the_site_name_for_the_author(client, auth, pages):
     assert (doc["title"], doc["author"]) == ("A Post", "Field Notes")
 
 
+def test_import_uses_the_charset_the_page_declares(client, auth, pages):
+    html = "<meta charset='windows-1252'><article><p>Café, naïve – déjà vu</p></article>"
+    pages["https://example.com/old"] = httpx.Response(
+        200, content=html.encode("cp1252"), headers={"content-type": "text/html"}
+    )
+    pages["https://example.com/header"] = httpx.Response(
+        200,
+        content="<p>Žluťoučký kůň</p>".encode("iso-8859-2"),
+        headers={"content-type": "text/html; charset=iso-8859-2"},
+    )
+    assert import_url(client, auth, "https://example.com/old").json()["content"] == (
+        "Café, naïve – déjà vu"
+    )
+    assert import_url(client, auth, "https://example.com/header").json()["content"] == (
+        "Žluťoučký kůň"
+    )
+
+
 def test_import_plain_text_markdown_and_pdf(client, auth, pages):
     pages["https://example.com/a.txt"] = httpx.Response(
         200, text="Line one\r\nLine two", headers={"content-type": "text/plain"}

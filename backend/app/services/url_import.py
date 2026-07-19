@@ -1,6 +1,8 @@
 """Create documents from web pages, plain text, Markdown and PDFs on the web."""
 
+import codecs
 import ipaddress
+import re
 import socket
 from dataclasses import dataclass
 from urllib.parse import urlsplit
@@ -14,6 +16,7 @@ from app.services.html_extract import extract
 from app.services.pdf import extract_pdf
 
 USER_AGENT = "annotate/0.1 (document import)"
+_META_CHARSET = re.compile(rb"""<meta[^>]+charset\s*=\s*["']?\s*([a-zA-Z0-9_.:-]+)""", re.I)
 
 
 @dataclass
@@ -84,6 +87,20 @@ def _download(client: httpx.Client, url: str) -> tuple[httpx.Response, bytes]:
         raise AppError("Could not download the page", code="fetch_failed", status_code=502) from exc
 
 
+def _encoding(response: httpx.Response, body: bytes, html: bool) -> str:
+    """The charset from the Content-Type header, else a <meta charset>, else UTF-8."""
+    if "charset=" in response.headers.get("content-type", "").lower() and response.encoding:
+        return response.encoding
+    if html:
+        match = _META_CHARSET.search(body[:4096])
+        if match:
+            try:
+                return codecs.lookup(match.group(1).decode("ascii")).name
+            except LookupError:
+                pass
+    return "utf-8"
+
+
 def fetch_document(client: httpx.Client, url: str) -> FetchedDocument:
     url = check_url(url)
     response, body = _download(client, url)
@@ -95,8 +112,9 @@ def fetch_document(client: httpx.Client, url: str) -> FetchedDocument:
         content, title = extract_pdf(body)
         return FetchedDocument(title, None, "pdf", content, final_url)
 
-    text = body.decode(response.encoding or "utf-8", errors="replace")
-    if media_type in ("text/html", "application/xhtml+xml"):
+    is_html = media_type in ("text/html", "application/xhtml+xml")
+    text = body.decode(_encoding(response, body, is_html), errors="replace")
+    if is_html:
         page = extract(text)
         # Many pages name no author; the site is the next best thing to show.
         author = page.author or page.site_name
