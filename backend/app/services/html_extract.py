@@ -5,6 +5,7 @@ scripts and other chrome, and write headings, paragraphs, list items, quotes
 and code blocks as Markdown so the reader renders them.
 """
 
+import re
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 
@@ -14,6 +15,12 @@ SKIP = {
 }  # fmt: skip
 HEADINGS = {"h1": 1, "h2": 2, "h3": 3, "h4": 4, "h5": 5, "h6": 6}
 BLOCKS = {"p", "div", "section", "li", "blockquote", "pre", "dd", "dt", "td", "th", "tr", *HEADINGS}
+# Class or id words that mark page furniture rather than the article itself.
+_CHROME = re.compile(
+    r"(?:^|[\s_-])(?:cookies?|consent|newsletter|subscribe|share|sharing|social|related"
+    r"|comments?|promo|advert|ads?|banner|sidebar|breadcrumbs?|popup|modal)(?:$|[\s_-])"
+)
+_CHROME_ROLES = {"navigation", "banner", "complementary", "contentinfo", "dialog"}
 VOID = {"br", "img", "hr", "meta", "link", "input", "source", "wbr", "area", "col", "embed"}
 
 
@@ -32,6 +39,14 @@ class _Block:
     parts: list[str] = field(default_factory=list)
 
 
+def _is_chrome(attrs: list[tuple[str, str | None]]) -> bool:
+    values = dict(attrs)
+    if (values.get("role") or "").lower() in _CHROME_ROLES:
+        return True
+    words = f"{values.get('class') or ''} {values.get('id') or ''}".lower().strip()
+    return bool(words) and _CHROME.search(words) is not None
+
+
 class _Extractor(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -39,6 +54,7 @@ class _Extractor(HTMLParser):
         self.meta: dict[str, str] = {}
         self.title_parts: list[str] = []
         self._stack: list[str] = []
+        self._skipped: list[bool] = []
         self._skip = 0
         self._in_title = False
         self._article = 0
@@ -69,8 +85,10 @@ class _Extractor(HTMLParser):
             if tag == "br" and self._current is not None:
                 self._current.parts.append("\n")
             return
+        skipped = tag in SKIP or _is_chrome(attrs)
         self._stack.append(tag)
-        if tag in SKIP:
+        self._skipped.append(skipped)
+        if skipped:
             self._skip += 1
         elif tag == "title":
             self._in_title = True
@@ -87,7 +105,7 @@ class _Extractor(HTMLParser):
         # Close everything up to the matching tag; real pages leave tags open.
         while self._stack:
             open_tag = self._stack.pop()
-            if open_tag in SKIP:
+            if self._skipped.pop():
                 self._skip -= 1
             elif open_tag == "title":
                 self._in_title = False

@@ -58,3 +58,17 @@ def test_tidy_title_strips_the_site_name():
     assert tidy_title("The Quarterly", "The Quarterly") == "The Quarterly"
     assert tidy_title("Notes | Elsewhere", "The Quarterly") == "Notes | Elsewhere"
     assert tidy_title("Notes", None) == "Notes"
+
+
+def test_leaves_out_cookie_banners_share_buttons_and_related_links():
+    page = extract(
+        """<article>
+        <div class="cookie-banner"><p>We use cookies.</p></div>
+        <p>The actual essay.</p>
+        <div class="post-share social"><a>Tweet</a></div>
+        <section id="related_posts"><h2>You may also like</h2></section>
+        <div role="complementary">Aside text</div>
+        <p class="shared-notes">Shared notes stay.</p>
+        </article>"""
+    )
+    assert page.text == "The actual essay.\n\nShared notes stay."
