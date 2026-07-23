@@ -22,6 +22,7 @@ export default function NewDocumentPage() {
   const [content, setContent] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState('');
+  const [dragging, setDragging] = useState(false);
 
   const create = useMutation({
     mutationFn: (): Promise<DocumentDetail> =>
@@ -156,16 +157,30 @@ export default function NewDocumentPage() {
           </>
         )}
         {mode === 'upload' && (
-          <label className="field dropzone">
+          <label
+            className={`field dropzone${dragging ? ' dragging' : ''}`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              const dropped = e.dataTransfer.files[0];
+              if (dropped) setFile(dropped);
+            }}
+          >
             <span>File</span>
             <input
               type="file"
               accept={ACCEPT}
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
+            {file && <span className="small">Selected: {file.name}</span>}
             <small className="muted">
-              Plain text, Markdown or PDF, up to 10 MB. PDFs need selectable text; scanned pages are
-              not supported.
+              Drop a file here or pick one. Plain text, Markdown or PDF, up to 10 MB. PDFs need
+              selectable text; scanned pages are not supported.
             </small>
           </label>
         )}

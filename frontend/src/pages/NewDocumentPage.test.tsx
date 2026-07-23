@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tokenStore } from '../api/client';
@@ -54,5 +54,20 @@ describe('NewDocumentPage', () => {
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent('private network addresses'),
     );
+  });
+
+  it('accepts a file dropped on the upload area', async () => {
+    const { calls } = mockApi({ 'GET /auth/me': user, 'POST /documents/upload': { id: 7 } });
+    renderApp(<NewDocumentPage />, { route: '/documents/new', path: '/documents/new' });
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Upload a file' }));
+    const file = new File(['# Notes'], 'notes.md', { type: 'text/markdown' });
+    fireEvent.drop(screen.getByText('File').parentElement!, { dataTransfer: { files: [file] } });
+    expect(screen.getByText('Selected: notes.md')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add document' }));
+    expect(await screen.findByText('Other page')).toBeInTheDocument();
+    const upload = calls.find((c) => c.path === '/documents/upload')!;
+    expect((upload.body as FormData).get('file')).toBe(file);
   });
 });

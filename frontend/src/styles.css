@@ -506,6 +506,11 @@ textarea {
   background: var(--bg);
 }
 
+.dropzone.dragging input[type='file'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .pagination,
 .load-more {
   display: flex;
