@@ -6,8 +6,12 @@ everything, and get it all back out as Markdown or CSV.
 
 ## Features
 
-- **Documents**: paste plain text or Markdown, or upload `.txt`, `.md` and `.pdf`
-  files (text is extracted from PDFs; scanned PDFs are not supported)
+- **Documents**: paste plain text or Markdown, upload `.txt`, `.md` and `.pdf`
+  files (text is extracted from PDFs; scanned PDFs are not supported), or
+  import a web page by its address and keep just the readable article
+- **Reading progress**: the reader remembers how far you got and opens where
+  you left off; the library shows a progress bar and filters by not started,
+  reading or finished
 - **Reader**: Markdown documents render headings, quotes, lists, code, bold,
   italic and links, and all of it stays highlightable
 - **Highlights**: select any passage in the reader and pick one of five colours;
@@ -113,6 +117,11 @@ npm run dev
 Open http://localhost:5173. Vite proxies `/api` to `http://localhost:4100`; set
 `API_URL` to point it somewhere else.
 
+Importing from a url refuses hosts on private networks (localhost included),
+so the API can't be used to reach the machines around it. To import from a
+server on your own machine while developing, set `IMPORT_ALLOW_PRIVATE=true`
+in `backend/.env`.
+
 ## Tests and linting
 
 ```bash
@@ -167,6 +176,8 @@ All endpoints live under `/api` and, apart from health and auth, need an
 | GET    | `/auth/me`                              | Current user (`PATCH` to rename)         |
 | GET    | `/documents`                            | List with `q`, `collection_id`, `sort`   |
 | POST   | `/documents`, `/documents/upload`       | Create from JSON or a file               |
+| POST   | `/documents/import`                     | Create from a web page or file url       |
+| PUT    | `/documents/{id}/progress`              | Save reading progress and position       |
 | GET    | `/documents/{id}`                       | Full text, collections, highlight count  |
 | GET    | `/documents/{id}/highlights`            | Highlights in reading order              |
 | POST   | `/documents/{id}/highlights`            | Highlight a range                        |
