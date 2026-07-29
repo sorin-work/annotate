@@ -5,7 +5,7 @@ import ipaddress
 import re
 import socket
 from dataclasses import dataclass
-from urllib.parse import urlsplit
+from urllib.parse import urljoin, urlsplit
 
 import httpx
 
@@ -61,30 +61,42 @@ def check_url(url: str) -> str:
     return url
 
 
+MAX_REDIRECTS = 5
+
+
 def _download(client: httpx.Client, url: str) -> tuple[httpx.Response, bytes]:
     limit = get_settings().max_upload_bytes
     try:
-        with client.stream("GET", url, headers={"User-Agent": USER_AGENT}) as response:
-            if response.status_code >= 400:
-                raise AppError(
-                    f"The page answered with HTTP {response.status_code}",
-                    code="fetch_failed",
-                    status_code=502,
-                )
-            chunks: list[bytes] = []
-            size = 0
-            for chunk in response.iter_bytes():
-                size += len(chunk)
-                if size > limit:
+        # Follow redirects by hand so every hop goes through check_url: a public
+        # page must not be able to bounce us to a private address.
+        for _ in range(MAX_REDIRECTS + 1):
+            with client.stream(
+                "GET", url, headers={"User-Agent": USER_AGENT}, follow_redirects=False
+            ) as response:
+                if response.is_redirect:
+                    url = check_url(urljoin(url, response.headers["location"]))
+                    continue
+                if response.status_code >= 400:
                     raise AppError(
-                        f"The page is too large (max {get_settings().max_upload_mb} MB)",
-                        code="payload_too_large",
-                        status_code=413,
+                        f"The page answered with HTTP {response.status_code}",
+                        code="fetch_failed",
+                        status_code=502,
                     )
-                chunks.append(chunk)
-            return response, b"".join(chunks)
+                chunks: list[bytes] = []
+                size = 0
+                for chunk in response.iter_bytes():
+                    size += len(chunk)
+                    if size > limit:
+                        raise AppError(
+                            f"The page is too large (max {get_settings().max_upload_mb} MB)",
+                            code="payload_too_large",
+                            status_code=413,
+                        )
+                    chunks.append(chunk)
+                return response, b"".join(chunks)
     except httpx.HTTPError as exc:
         raise AppError("Could not download the page", code="fetch_failed", status_code=502) from exc
+    raise AppError("The page redirects too many times", code="fetch_failed", status_code=502)
 
 
 def _encoding(response: httpx.Response, body: bytes, html: bool) -> str:

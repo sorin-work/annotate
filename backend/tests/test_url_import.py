@@ -140,6 +140,24 @@ def test_import_errors(client, auth, pages):
     )
 
 
+def test_import_follows_redirects_to_public_pages_only(client, auth, pages):
+    pages["https://example.com/old"] = httpx.Response(301, headers={"location": "/new"})
+    pages["https://example.com/new"] = httpx.Response(
+        200, text="Moved here.", headers={"content-type": "text/plain"}
+    )
+    pages["https://example.com/sneaky"] = httpx.Response(
+        302, headers={"location": "http://169.254.169.254/latest/meta-data/"}
+    )
+    pages["https://example.com/loop"] = httpx.Response(302, headers={"location": "/loop"})
+
+    moved = import_url(client, auth, "https://example.com/old").json()
+    assert (moved["content"], moved["source_url"]) == ("Moved here.", "https://example.com/new")
+    sneaky = import_url(client, auth, "https://example.com/sneaky")
+    assert sneaky.json()["error"]["code"] == "blocked_url"
+    loop = import_url(client, auth, "https://example.com/loop")
+    assert loop.json()["error"]["message"] == "The page redirects too many times"
+
+
 @pytest.mark.parametrize(
     "url",
     [
