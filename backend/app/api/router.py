@@ -4,6 +4,7 @@ from app.api.routes import (
     activity,
     auth,
     collections,
+    comments,
     documents,
     export,
     health,
@@ -18,6 +19,7 @@ api_router.include_router(health.router)
 api_router.include_router(auth.router)
 api_router.include_router(documents.router)
 api_router.include_router(highlights.router)
+api_router.include_router(comments.router)
 api_router.include_router(tags.router)
 api_router.include_router(collections.router)
 api_router.include_router(search.router)
