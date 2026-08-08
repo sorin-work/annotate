@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base, utcnow
 
 if TYPE_CHECKING:
+    from app.models.comment import Comment
     from app.models.document import Document
     from app.models.tag import Tag
 
@@ -40,4 +41,10 @@ class Highlight(Base):
     document: Mapped["Document"] = relationship(back_populates="highlights")
     tags: Mapped[list["Tag"]] = relationship(
         secondary=highlight_tags, back_populates="highlights", order_by="Tag.name"
+    )
+    comments: Mapped[list["Comment"]] = relationship(
+        back_populates="highlight",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="Comment.created_at, Comment.id",
     )
