@@ -114,7 +114,7 @@ def list_for_document(db: Session, document: Document) -> list[Highlight]:
         db.scalars(
             select(Highlight)
             .where(Highlight.document_id == document.id)
-            .options(selectinload(Highlight.tags))
+            .options(selectinload(Highlight.tags), selectinload(Highlight.comments))
             .order_by(Highlight.start_offset, Highlight.id)
         )
     )
@@ -134,7 +134,11 @@ def filtered_query(
         select(Highlight)
         .join(Document, Document.id == Highlight.document_id)
         .where(Highlight.owner_id == user.id)
-        .options(selectinload(Highlight.tags), selectinload(Highlight.document))
+        .options(
+            selectinload(Highlight.tags),
+            selectinload(Highlight.document),
+            selectinload(Highlight.comments),
+        )
     )
     if q:
         pattern = like_pattern(q)
@@ -172,6 +176,7 @@ def to_out(highlight: Highlight) -> HighlightOut:
         color=highlight.color,
         note=highlight.note,
         tags=sorted(tag.name for tag in highlight.tags),
+        comment_count=len(highlight.comments),
         created_at=highlight.created_at,
         updated_at=highlight.updated_at,
     )

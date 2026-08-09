@@ -40,3 +40,14 @@ def test_deleting_a_highlight_removes_its_comments(client, auth, document):
     ).json()
     client.delete(f"/api/highlights/{h['id']}", headers=auth)
     assert client.delete(f"/api/comments/{comment['id']}", headers=auth).status_code == 404
+
+
+def test_highlights_report_how_many_comments_they_have(client, auth, document):
+    h = highlight(client, auth, document, "lazy dog")
+    for body in ["one", "two"]:
+        client.post(f"/api/highlights/{h['id']}/comments", json={"body": body}, headers=auth)
+
+    in_document = client.get(f"/api/documents/{document['id']}/highlights", headers=auth).json()
+    assert in_document[0]["comment_count"] == 2
+    listed = client.get("/api/highlights", headers=auth).json()["items"]
+    assert listed[0]["comment_count"] == 2
