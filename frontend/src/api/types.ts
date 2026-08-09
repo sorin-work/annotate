@@ -52,6 +52,15 @@ export interface Highlight {
   color: Color;
   note: string | null;
   tags: string[];
+  comment_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Comment {
+  id: number;
+  highlight_id: number;
+  body: string;
   created_at: string;
   updated_at: string;
 }

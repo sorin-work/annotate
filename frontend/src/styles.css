@@ -1134,6 +1134,37 @@ textarea {
   gap: 1.25rem;
 }
 
+/* Comments */
+.comments {
+  display: grid;
+  gap: 0.5rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+}
+
+.comment-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.comment-list p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.comment-form {
+  display: grid;
+  gap: 0.4rem;
+  justify-items: end;
+}
+
+.comment-form textarea {
+  width: 100%;
+}
+
 /* Keyboard shortcuts */
 .shortcuts-group h3 {
   margin: 0.75rem 0 0.4rem;

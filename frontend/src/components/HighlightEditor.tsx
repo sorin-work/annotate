@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { HighlightChanges } from '../api/highlights';
 import type { Highlight } from '../api/types';
-import { timeAgo } from '../lib/format';
+import { plural, timeAgo } from '../lib/format';
 import ColorPicker from './ColorPicker';
+import CommentThread from './CommentThread';
 import TagInput from './TagInput';
 
 interface Props {
@@ -58,6 +59,9 @@ export default function HighlightEditor({
             ))}
           </span>
         )}
+        {highlight.comment_count > 0 && (
+          <span className="muted small">{plural(highlight.comment_count, 'comment')}</span>
+        )}
       </button>
     );
   }
@@ -99,6 +103,7 @@ export default function HighlightEditor({
         </button>
       </div>
       <span className="muted small">Highlighted {timeAgo(highlight.created_at)}</span>
+      <CommentThread highlightId={highlight.id} />
     </div>
   );
 }

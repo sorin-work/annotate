@@ -14,6 +14,7 @@ const highlight = {
   color: 'pink' as const,
   note: 'Still true.',
   tags: ['simplicity'],
+  comment_count: 0,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
