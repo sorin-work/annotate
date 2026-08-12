@@ -5,8 +5,14 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import Document, Highlight, User
-from app.schemas.activity import ActivityDocument, ActivityHighlight, ActivityItem, ActivityPage
+from app.models import Comment, Document, Highlight, User
+from app.schemas.activity import (
+    ActivityComment,
+    ActivityDocument,
+    ActivityHighlight,
+    ActivityItem,
+    ActivityPage,
+)
 
 
 def _documents(db: Session, user: User, before: datetime | None, limit: int) -> list[ActivityItem]:
@@ -38,9 +44,34 @@ def _highlights(db: Session, user: User, before: datetime | None, limit: int) ->
             type="highlight_added",
             at=h.created_at,
             document=ActivityDocument(id=h.document.id, title=h.document.title),
-            highlight=ActivityHighlight(id=h.id, quote=h.quote, color=h.color, note=h.note),
+            highlight=_highlight_ref(h),
         )
         for h in rows
+    ]
+
+
+def _highlight_ref(h: Highlight) -> ActivityHighlight:
+    return ActivityHighlight(id=h.id, quote=h.quote, color=h.color, note=h.note)
+
+
+def _comments(db: Session, user: User, before: datetime | None, limit: int) -> list[ActivityItem]:
+    query = (
+        select(Comment)
+        .where(Comment.owner_id == user.id)
+        .options(selectinload(Comment.highlight).selectinload(Highlight.document))
+    )
+    if before is not None:
+        query = query.where(Comment.created_at < before)
+    rows = db.scalars(query.order_by(Comment.created_at.desc(), Comment.id.desc()).limit(limit))
+    return [
+        ActivityItem(
+            type="comment_added",
+            at=c.created_at,
+            document=ActivityDocument(id=c.highlight.document.id, title=c.highlight.document.title),
+            highlight=_highlight_ref(c.highlight),
+            comment=ActivityComment(id=c.id, body=c.body),
+        )
+        for c in rows
     ]
 
 
@@ -49,7 +80,11 @@ def recent_activity(
 ) -> ActivityPage:
     # Each source can contribute at most ``limit`` items, so fetch one extra
     # from each to know whether an older page exists.
-    items = _documents(db, user, before, limit + 1) + _highlights(db, user, before, limit + 1)
+    items = [
+        *_documents(db, user, before, limit + 1),
+        *_highlights(db, user, before, limit + 1),
+        *_comments(db, user, before, limit + 1),
+    ]
     items.sort(key=lambda item: item.at, reverse=True)
     page = items[:limit]
     has_more = len(items) > limit

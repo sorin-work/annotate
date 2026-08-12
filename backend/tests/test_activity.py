@@ -35,3 +35,14 @@ def test_activity_pages_with_before(client, auth, document):
     ).json()
     assert [i["type"] for i in third["items"]] == ["document_added"]
     assert third["next_before"] is None
+
+
+def test_activity_includes_comments(client, auth, document):
+    h = highlight(client, auth, document, "lazy dog")
+    client.post(f"/api/highlights/{h['id']}/comments", json={"body": "Reread it"}, headers=auth)
+
+    latest = client.get("/api/activity", headers=auth).json()["items"][0]
+    assert latest["type"] == "comment_added"
+    assert latest["comment"]["body"] == "Reread it"
+    assert latest["highlight"]["quote"] == "lazy dog"
+    assert latest["document"]["title"] == "Sample"
