@@ -45,4 +45,18 @@ describe('ActivityPage', () => {
     );
     expect(fetchMock.mock.calls.some(([u]) => String(u).includes('before=2026-05-30'))).toBe(true);
   });
+
+  it('shows comments with the highlight they belong to', async () => {
+    mockApi({
+      'GET /auth/me': user,
+      'GET /activity': {
+        items: [{ ...highlightItem, type: 'comment_added', comment: { id: 3, body: 'Reread it' } }],
+        next_before: null,
+      },
+    });
+    renderApp(<ActivityPage />);
+    expect(await screen.findByText(/Commented in/)).toBeInTheDocument();
+    expect(screen.getByText('Reread it')).toBeInTheDocument();
+    expect(screen.queryByText('Yes.')).not.toBeInTheDocument();
+  });
 });

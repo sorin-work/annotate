@@ -11,6 +11,23 @@ function describe(item: ActivityItem) {
   const doc = <Link to={`/documents/${item.document.id}`}>{item.document.title}</Link>;
   if (item.type === 'document_added') return <>Added {doc}</>;
   const h = item.highlight!;
+  const quote = (
+    <Link
+      to={`/documents/${item.document.id}?highlight=${h.id}`}
+      className={`activity-quote border-${h.color}`}
+    >
+      {h.quote}
+    </Link>
+  );
+  if (item.type === 'comment_added') {
+    return (
+      <>
+        Commented in {doc}
+        {quote}
+        <span className="activity-note">{item.comment?.body}</span>
+      </>
+    );
+  }
   return (
     <>
       Highlighted in {doc}
@@ -59,7 +76,9 @@ export default function ActivityPage() {
           <h2>{day}</h2>
           <ul className="activity-list">
             {dayItems.map((item) => (
-              <li key={`${item.type}-${item.highlight?.id ?? item.document.id}`}>
+              <li
+                key={`${item.type}-${item.comment?.id ?? item.highlight?.id ?? item.document.id}`}
+              >
                 <span className="activity-text">{describe(item)}</span>
                 <time className="muted small" dateTime={item.at}>
                   {timeAgo(item.at)}

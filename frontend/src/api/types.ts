@@ -108,10 +108,11 @@ export interface Stats {
 }
 
 export interface ActivityItem {
-  type: 'document_added' | 'highlight_added';
+  type: 'document_added' | 'highlight_added' | 'comment_added';
   at: string;
   document: { id: number; title: string };
   highlight: { id: number; quote: string; color: Color; note: string | null } | null;
+  comment?: { id: number; body: string } | null;
 }
 
 export interface ActivityPage {
