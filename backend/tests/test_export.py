@@ -96,3 +96,17 @@ def test_slugify_folds_accents_and_falls_back():
     assert slugify("Însemnări și gânduri") == "insemnari-si-ganduri"
     assert slugify("Ça, c'est la vie!") == "ca-c-est-la-vie"
     assert slugify("読書ノート") == "annotations"
+
+
+def test_exports_include_comments(client, auth, document):
+    h = highlight(client, auth, document, "lazy dog", note="First note")
+    for body in ["Second look:\nstill good", "=1+1"]:
+        client.post(f"/api/highlights/{h['id']}/comments", json={"body": body}, headers=auth)
+
+    markdown = client.get(f"/api/documents/{document['id']}/export", headers=auth).text
+    assert ": Second look: still good\n" in markdown
+    assert markdown.index("First note") < markdown.index("Second look")
+
+    response = client.get(f"/api/documents/{document['id']}/export?format=csv", headers=auth)
+    rows = list(csv.DictReader(io.StringIO(response.text)))
+    assert rows[0]["comments"] == "Second look: still good | =1+1"

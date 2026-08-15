@@ -21,6 +21,7 @@ CSV_COLUMNS = [
     "start_offset",
     "end_offset",
     "created_at",
+    "comments",
 ]
 
 
@@ -53,6 +54,11 @@ def _document_section(document: Document, highlights: list[Highlight], level: in
             lines += [highlight.note.strip(), ""]
         if highlight.tags:
             lines += [" ".join(f"`#{tag.name}`" for tag in highlight.tags), ""]
+        if highlight.comments:
+            for comment in highlight.comments:
+                body = " ".join(comment.body.split())
+                lines.append(f"- {comment.created_at:%Y-%m-%d}: {body}")
+            lines.append("")
     return lines
 
 
@@ -101,6 +107,7 @@ def highlights_csv(highlights: Iterable[Highlight]) -> str:
                 h.start_offset,
                 h.end_offset,
                 h.created_at.isoformat(),
+                _safe_cell(" | ".join(" ".join(c.body.split()) for c in h.comments)),
             ]
         )
     return buffer.getvalue()
