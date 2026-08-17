@@ -59,4 +59,27 @@ describe('CommentThread', () => {
       expect(screen.queryByText('Still true on the second read.')).not.toBeInTheDocument(),
     );
   });
+
+  it('edits a comment in place', async () => {
+    let comments = [comment];
+    const { calls } = mockApi({
+      'GET /auth/me': user,
+      'GET /highlights/11/comments': () => comments,
+      'PATCH /comments/3': () => {
+        comments = [{ ...comment, body: 'Less true now.', updated_at: '2026-08-02T10:00:00Z' }];
+        return comments[0];
+      },
+    });
+    renderApp(<CommentThread highlightId={11} />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    const field = screen.getByRole('textbox', { name: 'Edit comment' });
+    await userEvent.clear(field);
+    await userEvent.type(field, 'Less true now.');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByText('Less true now.')).toBeInTheDocument();
+    expect(screen.getByText(/edited/)).toBeInTheDocument();
+    expect(calls.find((c) => c.method === 'PATCH')?.body).toEqual({ body: 'Less true now.' });
+  });
 });

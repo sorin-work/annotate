@@ -30,6 +30,15 @@ export default function CommentThread({ highlightId }: { highlightId: number }) 
     },
   });
   const remove = useMutation({ mutationFn: commentsApi.remove, onSuccess: refresh });
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [draft, setDraft] = useState('');
+  const edit = useMutation({
+    mutationFn: () => commentsApi.update(editingId!, draft.trim()),
+    onSuccess: () => {
+      setEditingId(null);
+      refresh();
+    },
+  });
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -42,9 +51,54 @@ export default function CommentThread({ highlightId }: { highlightId: number }) 
         <ol className="comment-list">
           {comments.map((comment) => (
             <li key={comment.id}>
-              <p>{comment.body}</p>
+              {editingId === comment.id ? (
+                <form
+                  className="comment-form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (draft.trim()) edit.mutate();
+                  }}
+                >
+                  <textarea
+                    aria-label="Edit comment"
+                    rows={2}
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                  />
+                  <span>
+                    <button
+                      type="button"
+                      className="button-link small"
+                      onClick={() => setEditingId(null)}
+                    >
+                      Cancel
+                    </button>{' '}
+                    <button
+                      type="submit"
+                      className="button small"
+                      disabled={!draft.trim() || edit.isPending}
+                    >
+                      Save
+                    </button>
+                  </span>
+                </form>
+              ) : (
+                <p>{comment.body}</p>
+              )}
               <span className="muted small">
                 {timeAgo(comment.created_at)}
+                {comment.updated_at !== comment.created_at && ' · edited'}
+                {' · '}
+                <button
+                  type="button"
+                  className="button-link small"
+                  onClick={() => {
+                    setEditingId(comment.id);
+                    setDraft(comment.body);
+                  }}
+                >
+                  Edit
+                </button>
                 {' · '}
                 <button
                   type="button"
@@ -73,7 +127,7 @@ export default function CommentThread({ highlightId }: { highlightId: number }) 
           Comment
         </button>
       </form>
-      <ErrorMessage error={add.error ?? remove.error} />
+      <ErrorMessage error={add.error ?? remove.error ?? edit.error} />
     </section>
   );
 }
