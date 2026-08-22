@@ -110,3 +110,28 @@ def test_exports_include_comments(client, auth, document):
     response = client.get(f"/api/documents/{document['id']}/export?format=csv", headers=auth)
     rows = list(csv.DictReader(io.StringIO(response.text)))
     assert rows[0]["comments"] == "Second look: still good | =1+1"
+
+
+def test_export_json(client, auth, document):
+    h = highlight(client, auth, document, "lazy dog", note="Note", tags=["b", "a"], color="blue")
+    client.post(f"/api/highlights/{h['id']}/comments", json={"body": "Later"}, headers=auth)
+    other = client.post(
+        "/api/documents", json={"title": "Another", "content": "Worth keeping."}, headers=auth
+    ).json()
+    highlight(client, auth, other, "Worth keeping")
+
+    response = client.get("/api/export?format=json", headers=auth)
+    assert response.headers["content-type"] == "application/json"
+    assert response.headers["content-disposition"].endswith('.json"')
+    body = response.json()
+    assert [d["title"] for d in body["documents"]] == ["Another", "Sample"]
+    sample = body["documents"][1]
+    assert sample["author"] == "A. Writer"
+    exported = sample["highlights"][0]
+    assert exported["quote"] == "lazy dog"
+    assert exported["tags"] == ["a", "b"]
+    assert exported["color"] == "blue"
+    assert [c["body"] for c in exported["comments"]] == ["Later"]
+
+    single = client.get(f"/api/documents/{document['id']}/export?format=json", headers=auth)
+    assert [d["id"] for d in single.json()["documents"]] == [document["id"]]

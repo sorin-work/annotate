@@ -1,7 +1,8 @@
-"""Render highlights as Markdown or CSV."""
+"""Render highlights as Markdown, CSV or JSON."""
 
 import csv
 import io
+import json
 import re
 import unicodedata
 from collections.abc import Iterable
@@ -111,3 +112,39 @@ def highlights_csv(highlights: Iterable[Highlight]) -> str:
             ]
         )
     return buffer.getvalue()
+
+
+def _highlight_json(h: Highlight) -> dict:
+    return {
+        "id": h.id,
+        "quote": h.quote,
+        "note": h.note,
+        "color": h.color,
+        "tags": [tag.name for tag in h.tags],
+        "start_offset": h.start_offset,
+        "end_offset": h.end_offset,
+        "created_at": h.created_at.isoformat(),
+        "comments": [{"body": c.body, "created_at": c.created_at.isoformat()} for c in h.comments],
+    }
+
+
+def highlights_json(highlights: Iterable[Highlight]) -> str:
+    """Highlights grouped by document, for scripts and other tools."""
+    ordered = sorted(
+        highlights, key=lambda h: (h.document.title.lower(), h.document_id, h.start_offset)
+    )
+    documents = []
+    for _, group in groupby(ordered, key=lambda h: h.document_id):
+        items = list(group)
+        document = items[0].document
+        documents.append(
+            {
+                "id": document.id,
+                "title": document.title,
+                "author": document.author,
+                "source_url": document.source_url,
+                "highlights": [_highlight_json(h) for h in items],
+            }
+        )
+    payload = {"exported_at": datetime.now(UTC).isoformat(), "documents": documents}
+    return json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
