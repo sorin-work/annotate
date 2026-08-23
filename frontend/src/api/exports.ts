@@ -1,7 +1,7 @@
 import { api, toQuery } from './client';
 import type { Color } from './types';
 
-export type ExportFormat = 'md' | 'csv';
+export type ExportFormat = 'md' | 'csv' | 'json';
 
 function save(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
