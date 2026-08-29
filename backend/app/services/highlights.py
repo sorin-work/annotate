@@ -2,7 +2,7 @@ from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.errors import AppError, NotFoundError
-from app.models import Document, Highlight, Tag, User, collection_documents
+from app.models import Comment, Document, Highlight, Tag, User, collection_documents
 from app.schemas.highlights import (
     HighlightBulkAction,
     HighlightBulkResult,
@@ -147,6 +147,7 @@ def filtered_query(
                 Highlight.quote.ilike(pattern, escape=LIKE_ESCAPE),
                 Highlight.note.ilike(pattern, escape=LIKE_ESCAPE),
                 Highlight.tags.any(Tag.name.ilike(pattern, escape=LIKE_ESCAPE)),
+                Highlight.comments.any(Comment.body.ilike(pattern, escape=LIKE_ESCAPE)),
             )
         )
     if tag:

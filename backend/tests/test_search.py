@@ -73,3 +73,13 @@ def test_percent_and_underscore_are_matched_literally(client, auth):
     found = client.get("/api/highlights?q=e_c", headers=auth).json()
     assert [h["quote"] for h in found["items"]] == ["snake_case"]
     assert client.get("/api/highlights?q=e_n", headers=auth).json()["total"] == 0
+
+
+def test_search_finds_highlights_by_their_comments(client, auth, document):
+    h = highlight(client, auth, document, "lazy dog")
+    highlight(client, auth, document, "quick brown")
+    client.post(
+        f"/api/highlights/{h['id']}/comments", json={"body": "Reminds me of Aesop"}, headers=auth
+    )
+    results = client.get("/api/search?q=aesop", headers=auth).json()
+    assert [r["quote"] for r in results["highlights"]] == ["lazy dog"]
