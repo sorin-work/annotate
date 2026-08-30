@@ -12,7 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import utcnow
-from app.models import Collection, Document, Highlight, User
+from app.models import Collection, Comment, Document, Highlight, User
 from app.security import hash_password
 from app.services.tags import get_or_create_tags
 from app.services.text import count_words
@@ -29,6 +29,7 @@ class SampleDocument:
     author: str | None = None
     source_url: str | None = None
     days_ago: int = 30
+    progress: float = 0.0
 
 
 @dataclass
@@ -47,6 +48,7 @@ DOCUMENTS = [
         author="Henry David Thoreau",
         source_url="https://www.gutenberg.org/ebooks/205",
         days_ago=160,
+        progress=1.0,
     ),
     SampleDocument(
         "self-reliance.txt",
@@ -54,6 +56,7 @@ DOCUMENTS = [
         author="Ralph Waldo Emerson",
         source_url="https://www.gutenberg.org/ebooks/16643",
         days_ago=120,
+        progress=0.6,
     ),
     SampleDocument(
         "meditations-book-two.txt",
@@ -61,8 +64,11 @@ DOCUMENTS = [
         author="Marcus Aurelius (tr. George Long)",
         source_url="https://www.gutenberg.org/ebooks/2680",
         days_ago=95,
+        progress=1.0,
     ),
-    SampleDocument("reading-papers.md", "Reading research papers in three passes", days_ago=60),
+    SampleDocument(
+        "reading-papers.md", "Reading research papers in three passes", days_ago=60, progress=0.35
+    ),
     SampleDocument("spaced-repetition.md", "Why spaced repetition works", days_ago=34),
     SampleDocument("design-docs.md", "Writing design docs people actually read", days_ago=9),
 ]
@@ -218,6 +224,20 @@ HIGHLIGHTS = [
     ),
 ]
 
+# Later thoughts on some of the highlights: (quote, comment, days after highlighting).
+COMMENTS = [
+    (
+        "Our life is frittered away by detail.",
+        "Reread this on a slow Sunday. The fix is fewer inputs, not better filters.",
+        40,
+    ),
+    (
+        "A foolish consistency is the hobgoblin of little minds",
+        "People quote this to excuse changing their minds; Emerson is after conformity.",
+        12,
+    ),
+]
+
 COLLECTIONS = [
     (
         "Philosophy",
@@ -268,32 +288,43 @@ def seed_demo(db: Session) -> bool:
             created_at=created,
             updated_at=created,
             last_opened_at=created + timedelta(days=min(sample.days_ago - 1, 3)),
+            reading_progress=sample.progress,
         )
         db.add(document)
         documents[sample.file] = document
     db.flush()
 
+    highlights: dict[str, Highlight] = {}
     for index, sample in enumerate(HIGHLIGHTS):
         document = documents[sample.file]
         start = document.content.find(sample.quote)
         if start < 0:
             raise ValueError(f"Sample quote not found in {sample.file}: {sample.quote!r}")
         created = document.created_at + timedelta(hours=1 + index)
+        highlight = Highlight(
+            document_id=document.id,
+            owner_id=user.id,
+            start_offset=start,
+            end_offset=start + len(sample.quote),
+            quote=sample.quote,
+            color=sample.color,
+            note=sample.note,
+            tags=get_or_create_tags(db, user, sample.tags),
+            created_at=created,
+            updated_at=created,
+        )
+        db.add(highlight)
+        highlights[sample.quote] = highlight
+        db.flush()  # so the next highlight sees tags created by this one
+
+    for quote, body, days_later in COMMENTS:
+        highlight = highlights[quote]
+        at = min(highlight.created_at + timedelta(days=days_later), now)
         db.add(
-            Highlight(
-                document_id=document.id,
-                owner_id=user.id,
-                start_offset=start,
-                end_offset=start + len(sample.quote),
-                quote=sample.quote,
-                color=sample.color,
-                note=sample.note,
-                tags=get_or_create_tags(db, user, sample.tags),
-                created_at=created,
-                updated_at=created,
+            Comment(
+                highlight_id=highlight.id, owner_id=user.id, body=body, created_at=at, updated_at=at
             )
         )
-        db.flush()  # so the next highlight sees tags created by this one
 
     for name, description, files in COLLECTIONS:
         db.add(

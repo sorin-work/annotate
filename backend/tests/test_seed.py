@@ -1,7 +1,7 @@
 from sqlalchemy import func, select
 
-from app.models import Collection, Document, Highlight, Tag, User
-from app.seed import DEMO_EMAIL, DEMO_PASSWORD, HIGHLIGHTS, seed_demo
+from app.models import Collection, Comment, Document, Highlight, Tag, User
+from app.seed import COMMENTS, DEMO_EMAIL, DEMO_PASSWORD, HIGHLIGHTS, seed_demo
 
 
 def test_seed_creates_demo_data_once(db):
@@ -13,6 +13,15 @@ def test_seed_creates_demo_data_once(db):
     assert db.scalar(select(func.count(Highlight.id))) == len(HIGHLIGHTS)
     assert db.scalar(select(func.count(Collection.id))) == 3
     assert db.scalar(select(func.count(Tag.id))) > 5
+    assert db.scalar(select(func.count(Comment.id))) == len(COMMENTS)
+
+
+def test_demo_library_shows_every_reading_status(db):
+    seed_demo(db)
+    progress = [d.reading_progress for d in db.scalars(select(Document))]
+    assert 0 in progress
+    assert any(0 < p < 0.98 for p in progress)
+    assert 1.0 in progress
 
 
 def test_seeded_highlights_match_their_documents(db):
