@@ -1475,3 +1475,47 @@ kbd {
     align-items: stretch;
   }
 }
+
+/* The newer pages on phones: scrollable nav, stacked rows, two stat tiles a row. */
+@media (max-width: 600px) {
+  .topnav {
+    order: 2;
+    flex-basis: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .stat-tiles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-tile dd {
+    font-size: 1.3rem;
+  }
+
+  .activity-list li {
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .bulk-actions {
+    top: 0;
+    border-radius: 0;
+    margin-left: -1rem;
+    margin-right: -1rem;
+  }
+
+  .bulk-tag {
+    flex: 1 1 100%;
+  }
+
+  .bulk-tag input {
+    flex: 1;
+  }
+
+  .toasts {
+    left: 1rem;
+    right: 1rem;
+    transform: none;
+  }
+}
