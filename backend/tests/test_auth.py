@@ -1,4 +1,5 @@
-from tests.conftest import register
+from app.models import Document, Highlight, Tag
+from tests.conftest import highlight, register
 
 
 def test_register_returns_token_and_user(client):
@@ -97,3 +98,22 @@ def test_change_password(client, auth):
         json={"email": "reader@example.com", "password": "brand-new-password"},
     )
     assert login.status_code == 200
+
+
+def test_delete_account_removes_everything(client, auth, other_auth, document, db):
+
+    highlight(client, auth, document, "lazy dog", tags=["animals"])
+    client.post("/api/documents", json={"title": "Keep", "content": "x"}, headers=other_auth)
+
+    wrong = client.post("/api/auth/delete-account", json={"password": "nope"}, headers=auth)
+    assert wrong.status_code == 400
+    assert wrong.json()["error"]["code"] == "invalid_password"
+
+    response = client.post(
+        "/api/auth/delete-account", json={"password": "correct-horse-battery"}, headers=auth
+    )
+    assert response.status_code == 204
+    assert client.get("/api/auth/me", headers=auth).status_code == 401
+    assert [d.title for d in db.query(Document)] == ["Keep"]
+    assert db.query(Highlight).count() == 0
+    assert db.query(Tag).count() == 0

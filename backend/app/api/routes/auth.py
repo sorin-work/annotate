@@ -7,6 +7,7 @@ from app.models import User
 from app.ratelimit import SlidingWindowLimiter
 from app.schemas.auth import (
     ChangePasswordRequest,
+    DeleteAccountRequest,
     LoginRequest,
     RegisterRequest,
     TokenResponse,
@@ -87,4 +88,13 @@ def change_password(data: ChangePasswordRequest, user: CurrentUser, db: DbSessio
     if not verify_password(data.current_password, user.password_hash):
         raise AppError("Current password is incorrect", code="invalid_password")
     user.password_hash = hash_password(data.new_password)
+    db.commit()
+
+
+@router.post("/delete-account", status_code=status.HTTP_204_NO_CONTENT)
+def delete_account(data: DeleteAccountRequest, user: CurrentUser, db: DbSession) -> None:
+    """Delete the account and, through the foreign keys, everything in it."""
+    if not verify_password(data.password, user.password_hash):
+        raise AppError("Password is incorrect", code="invalid_password")
+    db.delete(user)
     db.commit()
