@@ -1128,6 +1128,20 @@ textarea {
   margin: 0.35rem 0 0;
 }
 
+.danger-zone {
+  border-color: var(--danger);
+}
+
+.danger-zone h2 {
+  color: var(--danger);
+}
+
+.checkbox {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

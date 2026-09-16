@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tokenStore } from '../api/client';
@@ -39,5 +39,25 @@ describe('SettingsPage', () => {
 
     expect(await screen.findByText('Saved.')).toBeInTheDocument();
     expect(calls.find((c) => c.method === 'PATCH')?.body).toEqual({ display_name: 'Sorin' });
+  });
+
+  it('deletes the account after confirming and signs out', async () => {
+    const { calls } = mockApi({
+      'GET /auth/me': user,
+      'POST /auth/delete-account': undefined,
+    });
+    renderApp(<SettingsPage />);
+
+    const button = await screen.findByRole('button', { name: 'Delete my account' });
+    const form = button.closest('form')!;
+    await userEvent.type(within(form).getByLabelText('Password'), 'correct-horse');
+    expect(button).toBeDisabled();
+    await userEvent.click(screen.getByRole('checkbox', { name: /everything will be deleted/ }));
+    await userEvent.click(button);
+
+    await waitFor(() => expect(tokenStore.get()).toBeNull());
+    expect(calls.find((c) => c.path === '/auth/delete-account')?.body).toEqual({
+      password: 'correct-horse',
+    });
   });
 });

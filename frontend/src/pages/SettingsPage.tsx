@@ -16,12 +16,14 @@ const THEMES: { value: ThemePreference; label: string }[] = [
 ];
 
 export default function SettingsPage() {
-  const { user, setUser } = useAuth();
+  const { user, setUser, signOut } = useAuth();
   const [displayName, setDisplayName] = useState(user?.display_name ?? '');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [passwordChanged, setPasswordChanged] = useState(false);
   const [theme, setTheme] = useState(getThemePreference);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const saveProfile = useMutation({
     mutationFn: () => authApi.updateProfile(displayName.trim()),
@@ -35,6 +37,16 @@ export default function SettingsPage() {
       setPasswordChanged(true);
     },
   });
+
+  const deleteAccount = useMutation({
+    mutationFn: () => authApi.deleteAccount(deletePassword),
+    onSuccess: signOut,
+  });
+
+  function onDelete(event: FormEvent) {
+    event.preventDefault();
+    deleteAccount.mutate();
+  }
 
   function onProfile(event: FormEvent) {
     event.preventDefault();
@@ -128,6 +140,42 @@ export default function SettingsPage() {
           </fieldset>
           <p className="muted small">Saved in this browser.</p>
         </section>
+
+        <form className="panel form danger-zone" onSubmit={onDelete}>
+          <h2>Delete account</h2>
+          <p className="muted small">
+            This deletes your account with every document, highlight, note, tag and collection in
+            it. Export anything you want to keep first; this cannot be undone.
+          </p>
+          <label className="field">
+            <span>Password</span>
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              required
+            />
+          </label>
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={confirmDelete}
+              onChange={(e) => setConfirmDelete(e.target.checked)}
+            />
+            I understand everything will be deleted
+          </label>
+          <ErrorMessage error={deleteAccount.error} />
+          <div className="form-actions">
+            <button
+              type="submit"
+              className="button danger"
+              disabled={!confirmDelete || !deletePassword || deleteAccount.isPending}
+            >
+              Delete my account
+            </button>
+          </div>
+        </form>
       </div>
     </>
   );

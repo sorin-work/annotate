@@ -18,4 +18,5 @@ export const authApi = {
       current_password: currentPassword,
       new_password: newPassword,
     }),
+  deleteAccount: (password: string) => api.post<void>('/auth/delete-account', { password }),
 };
