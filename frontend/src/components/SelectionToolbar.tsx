@@ -14,7 +14,7 @@ export default function SelectionToolbar({ selection, busy, onHighlight, onCance
   return (
     <div
       className="selection-toolbar"
-      style={{ top: top - 52, left: left + width / 2 }}
+      style={{ top: Math.max(top - 52, 8), left: Math.max(left + width / 2, 120) }}
       onMouseDown={(e) => e.preventDefault()}
       role="toolbar"
       aria-label="Highlight selection"
