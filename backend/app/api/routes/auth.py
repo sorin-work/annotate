@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request, status
 from sqlalchemy import select
 
+from app.db import utcnow
 from app.deps import CurrentUser, DbSession
 from app.errors import AppError, ConflictError, RateLimitedError, UnauthorizedError
 from app.models import User
@@ -83,12 +84,18 @@ def update_me(data: UpdateProfileRequest, user: CurrentUser, db: DbSession) -> U
     return UserOut.model_validate(user)
 
 
-@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
-def change_password(data: ChangePasswordRequest, user: CurrentUser, db: DbSession) -> None:
+@router.post("/change-password")
+def change_password(data: ChangePasswordRequest, user: CurrentUser, db: DbSession) -> TokenResponse:
+    """Change the password and sign out every other session.
+
+    The response carries a fresh token for the session that made the change.
+    """
     if not verify_password(data.current_password, user.password_hash):
         raise AppError("Current password is incorrect", code="invalid_password")
     user.password_hash = hash_password(data.new_password)
+    user.password_changed_at = utcnow().replace(microsecond=0)
     db.commit()
+    return _token_response(user)
 
 
 @router.post("/delete-account", status_code=status.HTTP_204_NO_CONTENT)

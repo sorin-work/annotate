@@ -10,7 +10,7 @@ from app.config import get_settings
 from app.db import get_db
 from app.errors import UnauthorizedError
 from app.models import User
-from app.security import decode_access_token
+from app.security import read_access_token
 
 _bearer = HTTPBearer(auto_error=False)
 
@@ -23,10 +23,14 @@ def get_current_user(
 ) -> User:
     if credentials is None:
         raise UnauthorizedError("Authentication required")
-    user_id = decode_access_token(credentials.credentials)
-    user = db.get(User, user_id) if user_id is not None else None
-    if user is None:
+    claims = read_access_token(credentials.credentials)
+    user = db.get(User, claims.user_id) if claims is not None else None
+    if user is None or claims is None:
         raise UnauthorizedError("Invalid or expired token")
+    changed = user.password_changed_at
+    # iat has whole seconds, so compare against the second the change happened in.
+    if changed is not None and claims.issued_at < int(changed.timestamp()):
+        raise UnauthorizedError("Your password was changed; please sign in again")
     return user
 
 

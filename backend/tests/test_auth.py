@@ -1,3 +1,8 @@
+from datetime import UTC, datetime, timedelta
+
+import jwt
+
+from app.config import get_settings
 from app.models import Document, Highlight, Tag
 from tests.conftest import highlight, register
 
@@ -91,7 +96,8 @@ def test_change_password(client, auth):
         json={"current_password": "correct-horse-battery", "new_password": "brand-new-password"},
         headers=auth,
     )
-    assert ok.status_code == 204
+    assert ok.status_code == 200
+    assert ok.json()["access_token"]
 
     login = client.post(
         "/api/auth/login",
@@ -117,3 +123,28 @@ def test_delete_account_removes_everything(client, auth, other_auth, document, d
     assert [d.title for d in db.query(Document)] == ["Keep"]
     assert db.query(Highlight).count() == 0
     assert db.query(Tag).count() == 0
+
+
+def test_changing_the_password_signs_out_other_sessions(client, auth):
+    user_id = client.get("/api/auth/me", headers=auth).json()["id"]
+    settings = get_settings()
+    issued = datetime.now(UTC) - timedelta(minutes=1)
+    old_token = jwt.encode(
+        {"sub": str(user_id), "iat": issued, "exp": issued + timedelta(days=1)},
+        settings.jwt_secret,
+        algorithm=settings.jwt_algorithm,
+    )
+    old_session = {"Authorization": f"Bearer {old_token}"}
+    assert client.get("/api/auth/me", headers=old_session).status_code == 200
+
+    response = client.post(
+        "/api/auth/change-password",
+        json={"current_password": "correct-horse-battery", "new_password": "brand-new-password"},
+        headers=auth,
+    )
+    fresh = {"Authorization": f"Bearer {response.json()['access_token']}"}
+
+    rejected = client.get("/api/auth/me", headers=old_session)
+    assert rejected.status_code == 401
+    assert "password was changed" in rejected.json()["error"]["message"]
+    assert client.get("/api/auth/me", headers=fresh).status_code == 200

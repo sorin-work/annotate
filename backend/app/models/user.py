@@ -14,3 +14,5 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     display_name: Mapped[str | None] = mapped_column(String(100))
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    # Tokens issued before this are rejected, which signs out other sessions.
+    password_changed_at: Mapped[datetime | None] = mapped_column()
