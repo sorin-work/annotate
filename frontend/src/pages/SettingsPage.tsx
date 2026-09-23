@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { authApi } from '../api/auth';
+import { tokenStore } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import ErrorMessage from '../components/ErrorMessage';
 import PageHeader from '../components/PageHeader';
@@ -31,7 +32,9 @@ export default function SettingsPage() {
   });
   const changePassword = useMutation({
     mutationFn: () => authApi.changePassword(currentPassword, newPassword),
-    onSuccess: () => {
+    onSuccess: (session) => {
+      // The old token stops working once the password changes; keep the new one.
+      tokenStore.set(session.access_token);
       setCurrentPassword('');
       setNewPassword('');
       setPasswordChanged(true);
@@ -111,7 +114,9 @@ export default function SettingsPage() {
             />
           </label>
           <ErrorMessage error={changePassword.error} />
-          {passwordChanged && <p className="success small">Password changed.</p>}
+          {passwordChanged && (
+            <p className="success small">Password changed. Other devices have been signed out.</p>
+          )}
           <div className="form-actions">
             <button type="submit" className="button primary" disabled={changePassword.isPending}>
               Change password

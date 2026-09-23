@@ -14,7 +14,7 @@ export const authApi = {
   updateProfile: (displayName: string) =>
     api.patch<User>('/auth/me', { display_name: displayName }),
   changePassword: (currentPassword: string, newPassword: string) =>
-    api.post<void>('/auth/change-password', {
+    api.post<TokenResponse>('/auth/change-password', {
       current_password: currentPassword,
       new_password: newPassword,
     }),

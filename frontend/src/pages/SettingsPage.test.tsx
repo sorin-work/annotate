@@ -60,4 +60,19 @@ describe('SettingsPage', () => {
       password: 'correct-horse',
     });
   });
+
+  it('keeps the new token after changing the password', async () => {
+    mockApi({
+      'GET /auth/me': user,
+      'POST /auth/change-password': { access_token: 'fresh-token', token_type: 'bearer', user },
+    });
+    renderApp(<SettingsPage />);
+
+    await userEvent.type(await screen.findByLabelText('Current password'), 'old-password');
+    await userEvent.type(screen.getByLabelText('New password'), 'new-password-123');
+    await userEvent.click(screen.getByRole('button', { name: 'Change password' }));
+
+    expect(await screen.findByText(/Other devices have been signed out/)).toBeInTheDocument();
+    expect(tokenStore.get()).toBe('fresh-token');
+  });
 });
