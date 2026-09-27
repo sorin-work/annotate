@@ -16,6 +16,23 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: annotate
+          POSTGRES_PASSWORD: annotate
+          POSTGRES_DB: annotate_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U annotate"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      # Enables tests/test_migrations.py; everything else still uses SQLite.
+      TEST_DATABASE_URL: postgresql+psycopg://annotate:annotate@localhost:5432/annotate_test
     steps:
       - uses: actions/checkout@v4
 
