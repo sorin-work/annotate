@@ -141,6 +141,15 @@ npm test
 API tests run against an in-memory SQLite database, so they need no running
 services. CI runs all of the above on every push and pull request.
 
+The migration tests (`tests/test_migrations.py`) are the exception: they run
+the Alembic history against a real PostgreSQL database and are skipped unless
+`TEST_DATABASE_URL` points at an empty one. With the compose database running:
+
+```bash
+docker compose exec db createdb -U annotate annotate_test
+TEST_DATABASE_URL=postgresql+psycopg://annotate:annotate@localhost:5433/annotate_test pytest tests/test_migrations.py
+```
+
 ## Project layout
 
 ```
