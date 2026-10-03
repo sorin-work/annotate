@@ -31,6 +31,8 @@ def extract_pdf(data: bytes) -> tuple[str, str | None]:
     """Return ``(text, title)`` for a PDF file."""
     try:
         reader = PdfReader(io.BytesIO(data))
+        if reader.is_encrypted:
+            raise AppError("Encrypted PDFs are not supported", code="unsupported_file")
         pages = [clean_page_text(page.extract_text() or "") for page in reader.pages]
     except PdfReadError as exc:
         raise AppError("Could not read this PDF file", code="invalid_file") from exc
