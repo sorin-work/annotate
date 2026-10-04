@@ -1,4 +1,7 @@
+import io
+
 import pytest
+from pypdf import PdfReader, PdfWriter
 
 from app.errors import AppError
 from app.services.pdf import clean_page_text, extract_pdf
@@ -29,3 +32,15 @@ def test_extract_pdf_without_text():
     with pytest.raises(AppError) as error:
         extract_pdf(make_pdf([""]))
     assert error.value.code == "unsupported_file"
+
+
+def test_encrypted_pdfs_are_rejected_with_a_clear_error():
+    writer = PdfWriter(clone_from=PdfReader(io.BytesIO(make_pdf(["Secret words"]))))
+    writer.encrypt(user_password="secret", algorithm="RC4-128")
+    buffer = io.BytesIO()
+    writer.write(buffer)
+
+    with pytest.raises(AppError) as error:
+        extract_pdf(buffer.getvalue())
+    assert error.value.code == "unsupported_file"
+    assert error.value.message == "Encrypted PDFs are not supported"
