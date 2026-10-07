@@ -8,21 +8,21 @@ dependencies = [
     "fastapi>=0.135",
     "uvicorn[standard]>=0.40",
     "sqlalchemy>=2.0.48",
-    "alembic>=1.18",
+    "alembic>=1.20",
     "psycopg[binary]>=3.2",
     "pydantic-settings>=2.13",
     "email-validator>=2.3",
     "argon2-cffi>=25.1",
     "pyjwt>=2.10",
-    "python-multipart>=0.0.20",
-    "pypdf>=6.4",
+    "python-multipart>=0.0.30",
+    "pypdf>=7.0",
     "httpx>=0.28",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=9.0",
-    "ruff>=0.15",
+    "ruff>=0.17",
 ]
 
 [build-system]
