@@ -3,6 +3,7 @@ import type { Highlight, HighlightWithDocument } from '../api/types';
 import { timeAgo } from '../lib/format';
 import { quoteAsMarkdown } from '../lib/quote';
 import CopyButton from './CopyButton';
+import Matched from './Matched';
 
 interface Props {
   highlight: Highlight | HighlightWithDocument;
@@ -10,6 +11,8 @@ interface Props {
   /** When given, the card gets a checkbox for bulk actions. */
   selected?: boolean;
   onToggleSelected?: () => void;
+  /** A search query to mark in the quote and note. */
+  query?: string;
 }
 
 export default function HighlightCard({
@@ -17,6 +20,7 @@ export default function HighlightCard({
   showDocument = true,
   selected,
   onToggleSelected,
+  query,
 }: Props) {
   const documentTitle = 'document_title' in highlight ? highlight.document_title : null;
   return (
@@ -30,8 +34,14 @@ export default function HighlightCard({
           onChange={onToggleSelected}
         />
       )}
-      <blockquote>{highlight.quote}</blockquote>
-      {highlight.note && <p className="note">{highlight.note}</p>}
+      <blockquote>
+        <Matched text={highlight.quote} query={query} />
+      </blockquote>
+      {highlight.note && (
+        <p className="note">
+          <Matched text={highlight.note} query={query} />
+        </p>
+      )}
       <footer>
         {highlight.tags.length > 0 && (
           <span className="tags">

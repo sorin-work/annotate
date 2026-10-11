@@ -915,6 +915,13 @@ textarea {
   background: var(--chip-bg);
 }
 
+mark.match {
+  background: var(--hl-yellow);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 0.05em;
+}
+
 .hl {
   border-radius: 2px;
   cursor: pointer;

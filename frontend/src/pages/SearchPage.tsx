@@ -5,6 +5,7 @@ import { Link, useSearchParams } from 'react-router';
 import { searchApi } from '../api/search';
 import ErrorMessage from '../components/ErrorMessage';
 import HighlightCard from '../components/HighlightCard';
+import Matched from '../components/Matched';
 import PageHeader from '../components/PageHeader';
 import { plural } from '../lib/format';
 
@@ -62,10 +63,14 @@ export default function SearchPage() {
             {data.documents.map((d) => (
               <li key={d.id}>
                 <Link to={`/documents/${d.id}`}>
-                  <strong>{d.title}</strong>
+                  <strong>
+                    <Matched text={d.title} query={q} />
+                  </strong>
                 </Link>
                 {d.author && <span className="muted"> · {d.author}</span>}
-                <p className="muted small">{d.snippet}</p>
+                <p className="muted small">
+                  <Matched text={d.snippet} query={q} />
+                </p>
               </li>
             ))}
           </ul>
@@ -77,7 +82,7 @@ export default function SearchPage() {
           <h2>{plural(data.highlights.length, 'highlight')}</h2>
           <div className="highlight-list">
             {data.highlights.map((h) => (
-              <HighlightCard key={h.id} highlight={h} />
+              <HighlightCard key={h.id} highlight={h} query={q} />
             ))}
           </div>
         </section>
