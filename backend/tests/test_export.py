@@ -135,3 +135,9 @@ def test_export_json(client, auth, document):
 
     single = client.get(f"/api/documents/{document['id']}/export?format=json", headers=auth)
     assert [d["id"] for d in single.json()["documents"]] == [document["id"]]
+
+
+def test_json_export_of_a_document_without_highlights(client, auth, document):
+    response = client.get(f"/api/documents/{document['id']}/export?format=json", headers=auth)
+    documents = response.json()["documents"]
+    assert [(d["title"], d["highlights"]) for d in documents] == [("Sample", [])]

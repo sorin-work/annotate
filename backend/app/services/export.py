@@ -128,23 +128,30 @@ def _highlight_json(h: Highlight) -> dict:
     }
 
 
-def highlights_json(highlights: Iterable[Highlight]) -> str:
-    """Highlights grouped by document, for scripts and other tools."""
-    ordered = sorted(
-        highlights, key=lambda h: (h.document.title.lower(), h.document_id, h.start_offset)
-    )
-    documents = []
-    for _, group in groupby(ordered, key=lambda h: h.document_id):
-        items = list(group)
-        document = items[0].document
-        documents.append(
-            {
-                "id": document.id,
-                "title": document.title,
-                "author": document.author,
-                "source_url": document.source_url,
-                "highlights": [_highlight_json(h) for h in items],
-            }
+def _document_json(document: Document, highlights: list[Highlight]) -> dict:
+    return {
+        "id": document.id,
+        "title": document.title,
+        "author": document.author,
+        "source_url": document.source_url,
+        "highlights": [_highlight_json(h) for h in highlights],
+    }
+
+
+def highlights_json(highlights: Iterable[Highlight], document: Document | None = None) -> str:
+    """Highlights grouped by document, for scripts and other tools.
+
+    With ``document``, that document is exported even if it has no highlights.
+    """
+    if document is not None:
+        documents = [_document_json(document, list(highlights))]
+    else:
+        ordered = sorted(
+            highlights, key=lambda h: (h.document.title.lower(), h.document_id, h.start_offset)
         )
+        documents = []
+        for _, group in groupby(ordered, key=lambda h: h.document_id):
+            items = list(group)
+            documents.append(_document_json(items[0].document, items))
     payload = {"exported_at": datetime.now(UTC).isoformat(), "documents": documents}
     return json.dumps(payload, ensure_ascii=False, indent=2) + "\n"

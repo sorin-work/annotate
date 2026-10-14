@@ -43,7 +43,7 @@ def export_document(
     if format == "csv":
         body = export.highlights_csv(highlights)
     elif format == "json":
-        body = export.highlights_json(highlights)
+        body = export.highlights_json(highlights, document=document)
     else:
         body = export.document_markdown(document, highlights)
     return _download(body, export.slugify(document.title), format)
