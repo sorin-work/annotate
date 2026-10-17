@@ -172,6 +172,19 @@ frontend/
 docker-compose.yml
 ```
 
+## How highlights work
+
+A document's text is stored once, exactly as uploaded (with line endings
+normalised to `\n`). A highlight is a `start_offset`/`end_offset` pair of
+character offsets into that text, plus a copy of the quoted text so exports and
+search never need to slice documents.
+
+The reader splits the text into blocks (paragraphs, and for Markdown also
+headings, quotes, list items and code) and each block into segments covered by
+the same set of highlights. Every rendered span carries the offset it starts
+at, which is how a browser selection is turned back into document offsets.
+Document text cannot be edited after upload, so offsets never go stale.
+
 ## API overview
 
 All endpoints live under `/api` and, apart from health and auth, need an
