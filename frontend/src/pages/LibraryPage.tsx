@@ -1,4 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { collectionsApi } from '../api/collections';
 import { documentsApi } from '../api/documents';
@@ -56,6 +57,15 @@ export default function LibraryPage() {
   }
 
   const pages = data ? Math.ceil(data.total / PAGE_SIZE) : 1;
+  // A page past the end (say, after deleting the last document on it) moves
+  // back to the last page that has documents.
+  const pastEnd = Boolean(data && data.items.length === 0 && data.total > 0 && page > 1);
+  useEffect(() => {
+    if (!pastEnd) return;
+    const next = new URLSearchParams(params);
+    next.set('page', String(Math.max(1, pages)));
+    setParams(next, { replace: true });
+  }, [pastEnd, pages, params, setParams]);
   const filtered = Boolean(q || collectionId || status);
 
   return (
@@ -112,7 +122,7 @@ export default function LibraryPage() {
       <ErrorMessage error={error} />
       {isPending && <p className="muted">Loading…</p>}
 
-      {data && data.items.length === 0 && (
+      {data && data.items.length === 0 && !pastEnd && (
         <EmptyState title={filtered ? 'No matching documents' : 'Your library is empty'}>
           {filtered ? (
             'Try a different filter.'

@@ -56,4 +56,20 @@ describe('LibraryPage', () => {
       ),
     );
   });
+
+  it('moves back to the last page when the page is past the end', async () => {
+    const { fetchMock } = mockApi({
+      'GET /auth/me': user,
+      'GET /collections': [],
+      'GET /documents': ({ url }: { url: string }) =>
+        new URL(url).searchParams.get('offset') === '0'
+          ? { items: [walden], total: 1 }
+          : { items: [], total: 1 },
+    });
+    renderApp(<LibraryPage />, { route: '/?page=3' });
+
+    expect(await screen.findByRole('heading', { name: 'Walden' })).toBeInTheDocument();
+    expect(screen.queryByText('No matching documents')).not.toBeInTheDocument();
+    expect(fetchMock.mock.calls.some(([u]) => String(u).includes('offset=40'))).toBe(true);
+  });
 });
