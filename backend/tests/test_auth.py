@@ -2,8 +2,10 @@ from datetime import UTC, datetime, timedelta
 
 import jwt
 
+from app.api.routes import auth as auth_routes
 from app.config import get_settings
-from app.models import Document, Highlight, Tag
+from app.models import Document, Highlight, Tag, User
+from app.security import hash_password
 from tests.conftest import highlight, register
 
 
@@ -148,3 +150,19 @@ def test_changing_the_password_signs_out_other_sessions(client, auth):
     assert rejected.status_code == 401
     assert "password was changed" in rejected.json()["error"]["message"]
     assert client.get("/api/auth/me", headers=fresh).status_code == 200
+
+
+def test_simultaneous_sign_ups_with_one_email_get_a_conflict(client, db, monkeypatch):
+    def hash_while_someone_else_signs_up(password: str) -> str:
+        # Another request registers the same email after our existence check.
+        db.add(User(email="race@example.com", password_hash=hash_password("x" * 12)))
+        db.commit()
+        return hash_password(password)
+
+    monkeypatch.setattr(auth_routes, "hash_password", hash_while_someone_else_signs_up)
+    response = client.post(
+        "/api/auth/register",
+        json={"email": "race@example.com", "password": "correct-horse-battery"},
+    )
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "email_taken"

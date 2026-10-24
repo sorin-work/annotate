@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from app.db import utcnow
 from app.deps import CurrentUser, DbSession
@@ -52,7 +53,15 @@ def register(data: RegisterRequest, request: Request, db: DbSession) -> TokenRes
         display_name=(data.display_name or "").strip() or None,
     )
     db.add(user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        # Two sign-ups with the same email at once: the unique index catches
+        # what the check above could not.
+        db.rollback()
+        raise ConflictError(
+            "An account with this email already exists", code="email_taken"
+        ) from exc
     return _token_response(user)
 
 
