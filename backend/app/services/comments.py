@@ -1,9 +1,9 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.errors import NotFoundError
 from app.models import Comment, Highlight, User
 from app.schemas.comments import CommentIn
+from app.services.ownership import get_owned
 
 
 def list_comments(db: Session, highlight: Highlight) -> list[Comment]:
@@ -24,10 +24,7 @@ def add_comment(db: Session, user: User, highlight: Highlight, data: CommentIn) 
 
 
 def get_comment(db: Session, user: User, comment_id: int) -> Comment:
-    comment = db.get(Comment, comment_id)
-    if comment is None or comment.owner_id != user.id:
-        raise NotFoundError("Comment not found")
-    return comment
+    return get_owned(db, Comment, comment_id, user, "Comment")
 
 
 def update_comment(db: Session, comment: Comment, data: CommentIn) -> Comment:

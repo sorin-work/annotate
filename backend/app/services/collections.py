@@ -1,9 +1,10 @@
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.errors import ConflictError, NotFoundError
+from app.errors import ConflictError
 from app.models import Collection, Document, User, collection_documents
 from app.schemas.collections import CollectionCreate, CollectionOut, CollectionUpdate
+from app.services.ownership import get_owned
 
 
 def _name_taken(db: Session, user: User, name: str, exclude_id: int | None = None) -> bool:
@@ -36,10 +37,7 @@ def create_collection(db: Session, user: User, data: CollectionCreate) -> Collec
 
 
 def get_collection(db: Session, user: User, collection_id: int) -> Collection:
-    collection = db.get(Collection, collection_id)
-    if collection is None or collection.owner_id != user.id:
-        raise NotFoundError("Collection not found")
-    return collection
+    return get_owned(db, Collection, collection_id, user, "Collection")
 
 
 def update_collection(

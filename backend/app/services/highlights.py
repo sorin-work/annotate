@@ -11,6 +11,7 @@ from app.schemas.highlights import (
     HighlightUpdate,
     HighlightWithDocument,
 )
+from app.services.ownership import get_owned
 from app.services.tags import get_or_create_tags, normalise_tag
 from app.services.text import LIKE_ESCAPE, like_pattern
 
@@ -52,10 +53,7 @@ def create_highlight(
 
 
 def get_highlight(db: Session, user: User, highlight_id: int) -> Highlight:
-    highlight = db.get(Highlight, highlight_id)
-    if highlight is None or highlight.owner_id != user.id:
-        raise NotFoundError("Highlight not found")
-    return highlight
+    return get_owned(db, Highlight, highlight_id, user, "Highlight")
 
 
 def update_highlight(

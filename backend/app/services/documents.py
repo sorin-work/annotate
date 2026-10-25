@@ -5,7 +5,7 @@ from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session, defer
 
 from app.db import utcnow
-from app.errors import AppError, NotFoundError
+from app.errors import AppError
 from app.models import Collection, Document, Highlight, User, collection_documents
 from app.schemas.documents import (
     DocumentCreate,
@@ -15,6 +15,7 @@ from app.schemas.documents import (
     ReadingProgress,
 )
 from app.services import text as textutil
+from app.services.ownership import get_owned
 from app.services.pdf import extract_pdf
 from app.services.url_import import FetchedDocument
 
@@ -113,10 +114,7 @@ def create_from_url(
 
 
 def get_document(db: Session, user: User, document_id: int) -> Document:
-    document = db.get(Document, document_id)
-    if document is None or document.owner_id != user.id:
-        raise NotFoundError("Document not found")
-    return document
+    return get_owned(db, Document, document_id, user, "Document")
 
 
 def mark_opened(db: Session, document: Document) -> None:
@@ -209,9 +207,7 @@ def list_documents(
     if status is not None:
         query = query.where(STATUSES[status])
     if collection_id is not None:
-        collection = db.get(Collection, collection_id)
-        if collection is None or collection.owner_id != user.id:
-            raise NotFoundError("Collection not found")
+        get_owned(db, Collection, collection_id, user, "Collection")
         query = query.join(
             collection_documents, collection_documents.c.document_id == Document.id
         ).where(collection_documents.c.collection_id == collection_id)

@@ -1,9 +1,10 @@
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.errors import AppError, NotFoundError
+from app.errors import AppError
 from app.models import Tag, User, highlight_tags
 from app.schemas.tags import TagOut
+from app.services.ownership import get_owned
 
 
 def normalise_tag(name: str) -> str:
@@ -40,10 +41,7 @@ def list_tags(db: Session, user: User) -> list[TagOut]:
 
 
 def get_tag(db: Session, user: User, tag_id: int) -> Tag:
-    tag = db.get(Tag, tag_id)
-    if tag is None or tag.owner_id != user.id:
-        raise NotFoundError("Tag not found")
-    return tag
+    return get_owned(db, Tag, tag_id, user, "Tag")
 
 
 def rename_tag(db: Session, user: User, tag: Tag, new_name: str) -> Tag:
