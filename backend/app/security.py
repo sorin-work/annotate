@@ -21,6 +21,10 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 
+def needs_rehash(password_hash: str) -> bool:
+    return _hasher.check_needs_rehash(password_hash)
+
+
 def create_access_token(user_id: int) -> str:
     settings = get_settings()
     now = datetime.now(UTC)

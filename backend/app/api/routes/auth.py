@@ -16,7 +16,7 @@ from app.schemas.auth import (
     UpdateProfileRequest,
     UserOut,
 )
-from app.security import create_access_token, hash_password, verify_password
+from app.security import create_access_token, hash_password, needs_rehash, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -77,6 +77,9 @@ def login(data: LoginRequest, request: Request, db: DbSession) -> TokenResponse:
         limiter.hit(key)
         raise UnauthorizedError("Incorrect email or password", code="invalid_credentials")
     limiter.reset(key)
+    if needs_rehash(user.password_hash):
+        user.password_hash = hash_password(data.password)
+        db.commit()
     return _token_response(user)
 
 
