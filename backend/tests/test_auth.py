@@ -1,11 +1,12 @@
 from datetime import UTC, datetime, timedelta
 
 import jwt
+from argon2 import PasswordHasher
 
 from app.api.routes import auth as auth_routes
 from app.config import get_settings
 from app.models import Document, Highlight, Tag, User
-from app.security import hash_password
+from app.security import hash_password, needs_rehash, verify_password
 from tests.conftest import highlight, register
 
 
@@ -166,3 +167,19 @@ def test_simultaneous_sign_ups_with_one_email_get_a_conflict(client, db, monkeyp
     )
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "email_taken"
+
+
+def test_login_upgrades_hashes_made_with_old_argon2_settings(client, db):
+    weak = PasswordHasher(time_cost=1, memory_cost=8 * 1024, parallelism=1)
+    db.add(User(email="old@example.com", password_hash=weak.hash("correct-horse-battery")))
+    db.commit()
+
+    response = client.post(
+        "/api/auth/login", json={"email": "old@example.com", "password": "correct-horse-battery"}
+    )
+    assert response.status_code == 200
+
+    db.expire_all()
+    user = db.query(User).filter_by(email="old@example.com").one()
+    assert not needs_rehash(user.password_hash)
+    assert verify_password("correct-horse-battery", user.password_hash)
