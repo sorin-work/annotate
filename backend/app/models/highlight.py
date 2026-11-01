@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, Column, ForeignKey, String, Table, Text
+from sqlalchemy import CheckConstraint, Column, ForeignKey, Index, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base, utcnow
@@ -23,7 +23,10 @@ highlight_tags = Table(
 
 class Highlight(Base):
     __tablename__ = "highlights"
-    __table_args__ = (CheckConstraint("end_offset > start_offset", name="valid_range"),)
+    __table_args__ = (
+        CheckConstraint("end_offset > start_offset", name="valid_range"),
+        Index("ix_highlights_owner_id_created_at", "owner_id", "created_at"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     document_id: Mapped[int] = mapped_column(
