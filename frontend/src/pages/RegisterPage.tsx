@@ -3,10 +3,12 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import ErrorMessage from '../components/ErrorMessage';
+import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 export default function RegisterPage() {
   const { signUp } = useAuth();
   const navigate = useNavigate();
+  useDocumentTitle('Create your account');
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

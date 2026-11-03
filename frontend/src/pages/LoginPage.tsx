@@ -3,10 +3,12 @@ import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import ErrorMessage from '../components/ErrorMessage';
+import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 export default function LoginPage() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  useDocumentTitle('Sign in');
   const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

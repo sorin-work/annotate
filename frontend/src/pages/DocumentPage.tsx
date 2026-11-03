@@ -21,6 +21,7 @@ import SelectionToolbar from '../components/SelectionToolbar';
 import { useToast } from '../components/Toast';
 import { formatDate, plural, readingTime } from '../lib/format';
 import { scrollBehavior } from '../lib/motion';
+import { useDocumentTitle } from '../lib/useDocumentTitle';
 import { scrollToOffset, useReadingProgress } from '../lib/progress';
 import { useShortcuts } from '../lib/shortcuts';
 
@@ -51,6 +52,7 @@ export default function DocumentPage() {
 
   const doc = documentQuery.data;
   const highlights = highlightsQuery.data ?? [];
+  useDocumentTitle(doc?.title);
   const highlightsKey = ['highlights', id];
 
   // Pick up where the reader left off, unless a link pointed at a highlight.

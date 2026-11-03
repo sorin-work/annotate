@@ -1,12 +1,16 @@
 import type { ReactNode } from 'react';
+import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 interface Props {
   title: ReactNode;
   subtitle?: ReactNode;
   actions?: ReactNode;
+  /** Tab title, when `title` isn't plain text. */
+  documentTitle?: string;
 }
 
-export default function PageHeader({ title, subtitle, actions }: Props) {
+export default function PageHeader({ title, subtitle, actions, documentTitle }: Props) {
+  useDocumentTitle(documentTitle ?? (typeof title === 'string' ? title : null));
   return (
     <div className="page-header">
       <div>
