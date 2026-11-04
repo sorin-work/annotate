@@ -72,3 +72,15 @@ def test_leaves_out_cookie_banners_share_buttons_and_related_links():
         </article>"""
     )
     assert page.text == "The actual essay.\n\nShared notes stay."
+
+
+def test_meta_values_are_put_on_one_line():
+    page = extract(
+        """<meta property="og:title" content="
+            A Long Title
+            Over Two Lines ">
+        <meta name="author" content="  Ada   Reader ">
+        <p>Text</p>"""
+    )
+    assert page.title == "A Long Title Over Two Lines"
+    assert page.author == "Ada Reader"

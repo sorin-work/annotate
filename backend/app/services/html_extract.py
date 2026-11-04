@@ -79,7 +79,8 @@ class _Extractor(HTMLParser):
             values = dict(attrs)
             key = values.get("property") or values.get("name")
             if key and values.get("content"):
-                self.meta.setdefault(key.lower(), values["content"].strip())
+                # Meta values often carry the template's line breaks and indentation.
+                self.meta.setdefault(key.lower(), " ".join(values["content"].split()))
             return
         if tag in VOID:
             if tag == "br" and self._current is not None:
