@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tokenStore } from '../api/client';
 import type { DocumentDetail, Highlight } from '../api/types';
-import { mockApi, renderApp, user } from '../test/utils';
+import { mockApi, renderApp, testQueryClient, user } from '../test/utils';
 import DocumentPage from './DocumentPage';
 
 const content = 'Our life is frittered away by detail.\n\nSimplicity, simplicity, simplicity!';
@@ -184,5 +184,31 @@ describe('DocumentPage', () => {
       }),
     );
     expect(await within(sidebar).findByText('1 highlight')).toBeInTheDocument();
+  });
+
+  it('marks the dashboard and activity as out of date after highlighting', async () => {
+    mockApi({
+      'GET /auth/me': user,
+      'GET /documents/5': doc,
+      'GET /documents/5/highlights': [],
+      'GET /tags': [],
+      'POST /documents/5/highlights': { ...highlight, id: 12 },
+    });
+    const queryClient = testQueryClient();
+    queryClient.setQueryData(['stats'], { highlights: 0 });
+    queryClient.setQueryData(['activity'], { pages: [], pageParams: [] });
+    renderApp(<DocumentPage />, { route: '/documents/5', path: '/documents/:id', queryClient });
+
+    const text = (await screen.findByText(/^Our life/)).firstChild!;
+    const range = document.createRange();
+    range.setStart(text, 0);
+    range.setEnd(text, 8);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(range);
+    fireEvent.mouseUp(screen.getByTestId('reader'));
+    await userEvent.keyboard('1');
+
+    await waitFor(() => expect(queryClient.getQueryState(['stats'])?.isInvalidated).toBe(true));
+    expect(queryClient.getQueryState(['activity'])?.isInvalidated).toBe(true);
   });
 });

@@ -83,6 +83,8 @@ export default function DocumentPage() {
     queryClient.invalidateQueries({ queryKey: ['highlights-all'] });
     queryClient.invalidateQueries({ queryKey: ['documents'] });
     queryClient.invalidateQueries({ queryKey: ['search'] });
+    queryClient.invalidateQueries({ queryKey: ['stats'] });
+    queryClient.invalidateQueries({ queryKey: ['activity'] });
   };
 
   const create = useMutation({

@@ -41,10 +41,16 @@ export function mockApi(routes: Record<string, unknown | Handler>) {
   return { fetchMock, calls };
 }
 
-export function renderApp(ui: ReactElement, { route = '/', path = '*' } = {}) {
-  const queryClient = new QueryClient({
+export function testQueryClient() {
+  return new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
+}
+
+export function renderApp(
+  ui: ReactElement,
+  { route = '/', path = '*', queryClient = testQueryClient() } = {},
+) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[route]}>
