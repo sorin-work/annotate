@@ -13,6 +13,7 @@ const GROUPS: { title: string; keys: [string, string][] }[] = [
     keys: [
       ['1 – 5', 'Highlight the selection in yellow, green, blue, pink or purple'],
       ['j / k', 'Next / previous highlight'],
+      ['n', 'Write in the open highlight’s note'],
       ['Esc', 'Cancel the selection or close the highlight'],
     ],
   },

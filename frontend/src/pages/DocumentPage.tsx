@@ -210,6 +210,11 @@ export default function DocumentPage() {
       ...colorShortcuts,
       j: () => step(1),
       k: () => step(-1),
+      // n jumps into the note of the open highlight.
+      n: () => {
+        if (activeId === null) return;
+        document.querySelector<HTMLTextAreaElement>(`#highlight-${activeId} textarea`)?.focus();
+      },
       Escape: () => {
         if (selection) {
           setSelection(null);

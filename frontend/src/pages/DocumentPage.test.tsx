@@ -152,6 +152,11 @@ describe('DocumentPage', () => {
     );
     expect(document.getElementById('highlight-12')).toHaveClass('active');
 
+    await userEvent.keyboard('n');
+    expect(within(sidebar).getByPlaceholderText('Why does this matter?')).toHaveFocus();
+    // Typing in the note doesn't trigger shortcuts; leave it before pressing Escape.
+    (document.activeElement as HTMLElement).blur();
+
     await userEvent.keyboard('{Escape}');
     expect(within(sidebar).queryByPlaceholderText('Why does this matter?')).not.toBeInTheDocument();
   });
