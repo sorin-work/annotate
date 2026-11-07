@@ -2,7 +2,7 @@
 
 A reading companion for people who take notes on what they read. Upload or paste
 a document, highlight passages, write notes next to them, tag and organise
-everything, and get it all back out as Markdown or CSV.
+everything, and get it all back out as Markdown, CSV or JSON.
 
 ## Features
 
@@ -16,22 +16,26 @@ everything, and get it all back out as Markdown or CSV.
   italic and links, and all of it stays highlightable
 - **Highlights**: select any passage in the reader and pick one of five colours;
   overlapping highlights are fine, and a deleted highlight can be undone
-- **Notes and tags**: attach a note and any number of tags to each highlight;
-  renaming a tag onto an existing one merges them
+- **Notes, comments and tags**: attach a note and any number of tags to each
+  highlight, and add dated comments when you come back to it later; renaming a
+  tag onto an existing one merges them
 - **Collections**: group documents into shelves; a document can live in several
 - **Highlights page**: every highlight in one list, filtered by tag, colour or
   collection and sorted by date or reading order; select several to tag,
   recolour or delete them together
 - **Dashboard and recent activity**: totals, colours, top tags, highlights per
-  week, and a day-by-day feed of what you added
-- **Search**: one box across document text, highlights, notes and tags, with
-  filters for tag, colour and collection
+  week, and a day-by-day feed of the documents, highlights and comments you added
+- **Search**: one box across document text, highlights, notes, comments and
+  tags, with the matching words marked and filters for tag, colour and collection
 - **Export**: a single document, a collection, a tag or everything, as Markdown
-  (ready for Obsidian or a blog post) or CSV (for spreadsheets)
+  (ready for Obsidian or a blog post), CSV (for spreadsheets) or JSON (for
+  scripts), comments included
 - **Keyboard and themes**: shortcuts for highlighting and moving around (see
   below), and a dark theme that follows the system or can be picked in settings
 - **Accounts**: email and password sign-up, JWT bearer tokens, argon2 password
-  hashing; every document, highlight, tag and collection is private to its owner
+  hashing, rate-limited sign-in; changing the password signs out other devices,
+  and deleting the account removes everything in it. Every document, highlight,
+  tag and collection is private to its owner
 
 ## Keyboard shortcuts
 
@@ -43,6 +47,7 @@ in a field.
 | `/`       | anywhere | Focus the search box                            |
 | `1` – `5` | reader   | Highlight the selection in that colour          |
 | `j` / `k` | reader   | Next / previous highlight                       |
+| `n`       | reader   | Write in the open highlight's note              |
 | `Esc`     | reader   | Drop the selection, or close the open highlight |
 
 ## Stack
@@ -52,6 +57,7 @@ in a field.
 | API      | Python 3.12, FastAPI, SQLAlchemy 2, Alembic, PostgreSQL, pydantic v2 |
 | Auth     | PyJWT (HS256 bearer tokens), argon2-cffi                             |
 | PDFs     | pypdf (text extraction)                                              |
+| Imports  | httpx, a small HTML-to-Markdown extractor on the standard library    |
 | Web      | React 19, TypeScript, Vite, React Router, TanStack Query             |
 | Tests    | pytest (in-memory SQLite), Vitest + Testing Library (jsdom)          |
 | Tooling  | ruff (lint + format), ESLint, Prettier, GitHub Actions               |
@@ -72,9 +78,9 @@ Then open http://localhost:5174 and sign in with the demo account:
 - **Password:** `demo-password`
 
 The demo user comes with six documents (Thoreau, Emerson, Marcus Aurelius and a
-few essays on reading and note-taking), around twenty highlights with notes and
-tags, and three collections. Set `SEED_DEMO=false` to start with an empty
-database instead.
+few essays on reading and note-taking) at different stages of reading, around
+twenty highlights with notes, tags and a couple of comments, and three
+collections. Set `SEED_DEMO=false` to start with an empty database instead.
 
 | Service | URL / port                     | Notes                                       |
 | ------- | ------------------------------ | ------------------------------------------- |
@@ -159,7 +165,8 @@ backend/
     api/routes/         one router per area (auth, documents, highlights, ...)
     models/             SQLAlchemy models
     schemas/            pydantic request and response models
-    services/           business logic: documents, highlights, search, export, PDF
+    services/           business logic: documents, highlights, search, export,
+                        PDF and HTML extraction, url import, stats, activity
     seed/               demo account and sample documents
   tests/
 frontend/
@@ -167,7 +174,8 @@ frontend/
     api/                typed API client, one module per resource
     auth/               auth context and route guards
     components/         reader, highlight editor, shared UI
-    lib/                text blocks, highlight segments, selection offsets
+    lib/                text blocks, inline Markdown, highlight segments,
+                        selection offsets, reading progress, shortcuts, theme
     pages/              one component per route
 docker-compose.yml
 ```
@@ -185,6 +193,11 @@ the same set of highlights. Every rendered span carries the offset it starts
 at, which is how a browser selection is turned back into document offsets.
 Document text cannot be edited after upload, so offsets never go stale.
 
+Inline Markdown works the same way: `**`, `*`, `` ` `` and link brackets are
+hidden, but every visible piece of text still carries its offset, so styled
+text can be selected and highlighted like anything else. Reading progress is
+stored the same way too: the offset of the first block on screen.
+
 ## API overview
 
 All endpoints live under `/api` and, apart from health and auth, need an
@@ -196,7 +209,9 @@ All endpoints live under `/api` and, apart from health and auth, need an
 | GET    | `/health`                               | Liveness and database check              |
 | POST   | `/auth/register`, `/auth/login`         | Get a token                              |
 | GET    | `/auth/me`                              | Current user (`PATCH` to rename)         |
-| GET    | `/documents`                            | List with `q`, `collection_id`, `sort`   |
+| POST   | `/auth/change-password`                 | New password; returns a fresh token      |
+| POST   | `/auth/delete-account`                  | Delete the account and all its data      |
+| GET    | `/documents`                            | List with `q`, `collection_id`, `status`, `sort` |
 | POST   | `/documents`, `/documents/upload`       | Create from JSON or a file               |
 | POST   | `/documents/import`                     | Create from a web page or file url       |
 | PUT    | `/documents/{id}/progress`              | Save reading progress and position       |
@@ -206,13 +221,15 @@ All endpoints live under `/api` and, apart from health and auth, need an
 | GET    | `/highlights`                           | All highlights, filterable and sortable  |
 | POST   | `/highlights/bulk`                      | Tag, recolour or delete many at once     |
 | PATCH  | `/highlights/{id}`                      | Change note, colour or tags              |
+| GET    | `/highlights/{id}/comments`             | Comments on a highlight (`POST` to add)  |
+| PATCH  | `/comments/{id}`                        | Edit a comment (`DELETE` to remove)      |
 | GET    | `/tags`                                 | Tags with usage counts                   |
 | GET    | `/collections`                          | Collections with document counts         |
 | GET    | `/search?q=`                            | Documents and highlights matching `q`    |
 | GET    | `/stats`                                | Numbers for the dashboard                |
-| GET    | `/activity`                             | Recent documents and highlights          |
-| GET    | `/documents/{id}/export?format=md\|csv` | Export one document's highlights         |
-| GET    | `/export?format=md\|csv`                | Export everything, or a tag/collection   |
+| GET    | `/activity`                             | Recent documents, highlights, comments   |
+| GET    | `/documents/{id}/export?format=md\|csv\|json` | Export one document's highlights |
+| GET    | `/export?format=md\|csv\|json`                | Export everything, or a tag/collection |
 
 The full, interactive reference is at `/api/docs` when the API is running.
 
