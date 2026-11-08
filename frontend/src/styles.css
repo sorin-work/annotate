@@ -1341,6 +1341,11 @@ kbd {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
+  align-items: baseline;
+}
+
+.ranked-list li > span {
+  white-space: nowrap;
 }
 
 /* Recent activity */
