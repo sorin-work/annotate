@@ -15,7 +15,7 @@ from app.services import text as textutil
 from app.services.html_extract import extract
 from app.services.pdf import extract_pdf
 
-USER_AGENT = "annotate/0.1 (document import)"
+USER_AGENT = "annotate/0.2 (document import)"
 _META_CHARSET = re.compile(rb"""<meta[^>]+charset\s*=\s*["']?\s*([a-zA-Z0-9_.:-]+)""", re.I)
 
 

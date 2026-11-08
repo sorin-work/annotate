@@ -15,7 +15,7 @@ def create_app() -> FastAPI:
     logging.basicConfig(level=settings.log_level.upper())
 
     app = FastAPI(
-        title="annotate", version="0.1.0", docs_url="/api/docs", openapi_url="/api/openapi.json"
+        title="annotate", version="0.2.0", docs_url="/api/docs", openapi_url="/api/openapi.json"
     )
     app.add_middleware(
         CORSMiddleware,
