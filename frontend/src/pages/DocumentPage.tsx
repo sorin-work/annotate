@@ -65,18 +65,25 @@ export default function DocumentPage() {
     if (doc.reading_progress < 0.98) scrollToOffset(readerRef.current, doc.last_position);
   }, [doc, params]);
 
-  useReadingProgress(readerRef, Boolean(doc), (spot, leaving) => {
-    documentsApi
-      .saveProgress(id, spot.progress, spot.position, leaving)
-      .then(() => {
-        queryClient.setQueryData<typeof doc>(['document', id], (old) =>
-          old ? { ...old, reading_progress: spot.progress, last_position: spot.position } : old,
-        );
-        queryClient.invalidateQueries({ queryKey: ['documents'] });
-      })
-      // Losing one progress update is harmless; the next scroll saves again.
-      .catch(() => {});
-  });
+  useReadingProgress(
+    readerRef,
+    Boolean(doc),
+    (spot, leaving) => {
+      documentsApi
+        .saveProgress(id, spot.progress, spot.position, leaving)
+        .then(() => {
+          queryClient.setQueryData<typeof doc>(['document', id], (old) =>
+            old ? { ...old, reading_progress: spot.progress, last_position: spot.position } : old,
+          );
+          queryClient.invalidateQueries({ queryKey: ['documents'] });
+        })
+        // Losing one progress update is harmless; the next scroll saves again.
+        .catch(() => {});
+    },
+    // Opening a finished document starts at the top; that alone shouldn't
+    // mark it unfinished again. Scrolling still saves as usual.
+    { saveOnOpen: !doc || doc.reading_progress < 0.98 },
+  );
 
   const refreshRelated = () => {
     queryClient.invalidateQueries({ queryKey: ['tags'] });

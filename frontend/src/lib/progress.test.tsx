@@ -83,4 +83,17 @@ describe('useReadingProgress', () => {
     vi.advanceTimersByTime(1000);
     expect(onSave).toHaveBeenCalledWith({ progress: 1, position: 0 }, false);
   });
+
+  it('can skip the save on opening', () => {
+    const { root } = container([0], [40]);
+    root.getBoundingClientRect = () => ({ top: 80, height: 3000 }) as DOMRect;
+    const onSave = vi.fn();
+    renderHook(() => useReadingProgress({ current: root }, true, onSave, { saveOnOpen: false }));
+    vi.advanceTimersByTime(2000);
+    expect(onSave).not.toHaveBeenCalled();
+
+    window.dispatchEvent(new Event('scroll'));
+    vi.advanceTimersByTime(1000);
+    expect(onSave).toHaveBeenCalledOnce();
+  });
 });

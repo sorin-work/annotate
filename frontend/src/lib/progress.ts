@@ -48,6 +48,7 @@ export function useReadingProgress(
   containerRef: RefObject<HTMLElement | null>,
   enabled: boolean,
   onSave: (spot: ReadingSpot, leaving: boolean) => void,
+  { saveOnOpen = true }: { saveOnOpen?: boolean } = {},
 ) {
   const latest = useRef(onSave);
   useEffect(() => {
@@ -77,7 +78,7 @@ export function useReadingProgress(
     }
 
     // A short document may never scroll at all, so also save once after opening.
-    onScroll();
+    if (saveOnOpen) onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     document.addEventListener('visibilitychange', onHide);
     return () => {
@@ -85,5 +86,5 @@ export function useReadingProgress(
       window.removeEventListener('scroll', onScroll);
       document.removeEventListener('visibilitychange', onHide);
     };
-  }, [containerRef, enabled]);
+  }, [containerRef, enabled, saveOnOpen]);
 }
