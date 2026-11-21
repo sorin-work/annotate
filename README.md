@@ -233,6 +233,11 @@ All endpoints live under `/api` and, apart from health and auth, need an
 
 The full, interactive reference is at `/api/docs` when the API is running.
 
+## Roadmap
+
+Ideas for what could come next, with notes on how each would be built, are in
+[ROADMAP.md](ROADMAP.md).
+
 ## License
 
 MIT
